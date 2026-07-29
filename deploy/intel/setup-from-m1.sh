@@ -64,7 +64,21 @@ git archive --format=tar HEAD | /usr/bin/ssh -F /dev/null "dan@${intel_address}"
   git init --initial-branch=main >/dev/null
   git add --all
   git -c user.name="Dan" -c user.email="dan@a1.local" commit -m "chore: establish Intel watchdog baseline" >/dev/null
-  npm ci
+  npm_binary="$(command -v npm || true)"
+  if [ -z "$npm_binary" ]; then
+    setopt nonomatch 2>/dev/null || true
+    for npm_candidate in /opt/homebrew/bin/npm /usr/local/bin/npm "$HOME"/.nvm/versions/node/*/bin/npm "$HOME"/.volta/bin/npm; do
+      if [ -x "$npm_candidate" ]; then
+        npm_binary="$npm_candidate"
+        break
+      fi
+    done
+  fi
+  if [ -z "$npm_binary" ]; then
+    echo "Intel setup: npm is unavailable to the non-interactive installer." >&2
+    exit 1
+  fi
+  "$npm_binary" ci
  '
 
 echo "Intel baseline is ready. On Intel, run: cd /Users/dan/Documents/A1 && A1_WORKER_ID=intel bash deploy/m1/enroll-worker.sh"

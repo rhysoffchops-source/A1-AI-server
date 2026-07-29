@@ -20,6 +20,9 @@ command -v ssh >/dev/null || fail "ssh is required on the M1."
 command -v tar >/dev/null || fail "tar is required on the M1."
 git diff --quiet && git diff --cached --quiet ||
   fail "Commit the current A1 changes before copying the Intel baseline."
+replace_existing="${A1_REPLACE_INTEL_BASELINE:-false}"
+[[ "${replace_existing}" == "true" || "${replace_existing}" == "false" ]] ||
+  fail "A1_REPLACE_INTEL_BASELINE must be true or false."
 
 intel_address="$(
   tailscale status --json | node -e '
@@ -34,18 +37,26 @@ intel_address="$(
   '
 )" || fail "Could not find a1-intel in Tailscale."
 
-echo "Copying the private A1 baseline to Intel. You will be asked for the Intel password, then the VPS password."
+if [[ "${replace_existing}" == "true" ]]; then
+  echo "Preserving the incomplete Intel copy before transfer."
+  /usr/bin/ssh -F /dev/null "dan@${intel_address}" '
+    set -euo pipefail
+    destination="$HOME/Documents/A1"
+    if [ -e "$destination" ]; then
+      backup="$HOME/Documents/A1.incomplete.$(date +%Y%m%d-%H%M%S)"
+      mv "$destination" "$backup"
+      echo "Moved the incomplete Intel copy to $backup"
+    fi
+  '
+fi
+
+echo "Copying the private A1 baseline to Intel. You may be asked for the Intel password."
 git archive --format=tar HEAD | /usr/bin/ssh -F /dev/null "dan@${intel_address}" '
   set -euo pipefail
   destination="$HOME/Documents/A1"
   if [ -e "$destination" ]; then
-    if [ "${A1_REPLACE_INTEL_BASELINE:-false}" != "true" ]; then
-      echo "Intel setup: $destination already exists; refusing to overwrite it." >&2
-      exit 1
-    fi
-    backup="$HOME/Documents/A1.incomplete.$(date +%Y%m%d-%H%M%S)"
-    mv "$destination" "$backup"
-    echo "Moved the incomplete Intel copy to $backup"
+    echo "Intel setup: $destination already exists; refusing to overwrite it." >&2
+    exit 1
   fi
   mkdir -p "$destination"
   tar -xf - -C "$destination"

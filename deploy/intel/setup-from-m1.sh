@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Run on the M1. Copies the committed, non-secret A1 baseline to a1-intel over
-# Tailscale, creates an Intel-local Git baseline, installs dependencies, and
-# enrolls that machine as the Intel A1 worker.
+# Tailscale, creates an Intel-local Git baseline, and installs dependencies.
+# Worker enrolment is deliberately a separate interactive step on Intel so its
+# VPS password prompt always has a real terminal.
 set -euo pipefail
 
 project_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -34,12 +35,17 @@ intel_address="$(
 )" || fail "Could not find a1-intel in Tailscale."
 
 echo "Copying the private A1 baseline to Intel. You will be asked for the Intel password, then the VPS password."
-git archive --format=tar HEAD | /usr/bin/ssh -tt -F /dev/null "dan@${intel_address}" '
+git archive --format=tar HEAD | /usr/bin/ssh -F /dev/null "dan@${intel_address}" '
   set -euo pipefail
   destination="$HOME/Documents/A1"
   if [ -e "$destination" ]; then
-    echo "Intel setup: $destination already exists; refusing to overwrite it." >&2
-    exit 1
+    if [ "${A1_REPLACE_INTEL_BASELINE:-false}" != "true" ]; then
+      echo "Intel setup: $destination already exists; refusing to overwrite it." >&2
+      exit 1
+    fi
+    backup="$HOME/Documents/A1.incomplete.$(date +%Y%m%d-%H%M%S)"
+    mv "$destination" "$backup"
+    echo "Moved the incomplete Intel copy to $backup"
   fi
   mkdir -p "$destination"
   tar -xf - -C "$destination"
@@ -48,7 +54,6 @@ git archive --format=tar HEAD | /usr/bin/ssh -tt -F /dev/null "dan@${intel_addre
   git add --all
   git -c user.name="Dan" -c user.email="dan@a1.local" commit -m "chore: establish Intel watchdog baseline" >/dev/null
   npm ci
-  A1_WORKER_ID=intel bash deploy/m1/enroll-worker.sh
  '
 
-echo "Intel setup is complete. Refresh A1 and open Workers."
+echo "Intel baseline is ready. On Intel, run: cd /Users/dan/Documents/A1 && A1_WORKER_ID=intel bash deploy/m1/enroll-worker.sh"

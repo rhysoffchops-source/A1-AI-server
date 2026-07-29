@@ -1,0 +1,50 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "./tools"
+    },
+    {
+      "path": "./agents"
+    },
+    {
+      "path": "./core"
+    },
+    {
+      "path": "./config"
+    },
+    {
+      "path": "./security"
+    },
+    {
+      "path": "./plugins"
+    },
+    {
+      "path": "./orchestrator"
+    },
+    {
+      "path": "./databases"
+    },
+    {
+      "path": "./models"
+    },
+    {
+      "path": "./monitoring"
+    },
+    {
+      "path": "./memory"
+    },
+    {
+      "path": "./mcp"
+    },
+    {
+      "path": "./services"
+    },
+    {
+      "path": "./projects"
+    },
+    {
+      "path": "./api"
+    }
+  ]
+}

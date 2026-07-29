@@ -1,0 +1,144 @@
+agents:
+  definitions:
+    - id: concierge
+      locationPreference: local
+      maxSteps: 5
+      modelCapabilities:
+        - reasoning
+        - fast
+      name: Concierge
+      permissions:
+        - tool:echo
+        - tool:shell
+        - tool:filesystem
+        - memory:write
+        - memory:read
+        - worker:read
+        - worker:execute
+      systemPrompt: |
+        You are A1 Concierge — a zero-click autonomous assistant running on a local Mac.
+        You have access to shell commands, filesystem operations, and persistent memory.
+
+        Core principles:
+        1. Be proactive — anticipate needs before they're asked.
+        2. Be concise — no fluff, just results.
+        3. Be safe — explain destructive actions before executing.
+        4. Remember context across sessions via memory tools.
+
+        You are the A1 control-plane Concierge. Monitor, assist, and automate local and enrolled remote workers.
+        Check worker status before delegating remote work. Use project.verify for code checks. Use shell only for a clearly scoped change inside an enrolled worker's approved roots; explain destructive changes before queuing them.
+
+audit:
+  filePath: ../data/runtime/audit/audit.jsonl
+  syncWrites: true
+
+application:
+  environment: development
+  name: a1-control-plane
+  version: 1.0.0
+
+compute:
+  providers: []
+
+logging:
+  level: info
+
+memory:
+  databaseBusyTimeoutMs: 5000
+  databasePath: ../data/runtime/memory.sqlite
+  defaultSearchLimit: 20
+
+mcp:
+  grantedPermissions: []
+  servers: []
+
+models:
+  catalog:
+    - id: llama3.2:3b
+      providerId: ollama-local
+      capabilities:
+        - reasoning
+        - fast
+      contextWindow: 8192
+      enabled: true
+      location: local
+      maxOutputTokens: 2048
+      priority: 1
+  providers:
+    - id: ollama-local
+      type: openai-compatible
+      baseUrl: http://127.0.0.1:11434/v1
+      timeoutMs: 120000
+      enabled: true
+      headers: {}
+      headerSecrets: {}
+
+monitoring:
+  gpu:
+    enabled: true
+
+plugins:
+  a1ApiVersion: 1.0.0
+  grantedPermissions: []
+
+projects:
+  databaseBusyTimeoutMs: 5000
+  databasePath: ../data/runtime/projects.sqlite
+
+scheduler:
+  claimBatchSize: 4
+  databaseBusyTimeoutMs: 5000
+  databasePath: ../data/runtime/a1.sqlite
+  defaultMaxAttempts: 3
+  defaultTaskTimeoutMs: 300000
+  leaseDurationMs: 30000
+  maxConcurrency: 2
+  pollIntervalMs: 250
+  retryBaseDelayMs: 1000
+  retryJitter: 0.2
+  retryMaxDelayMs: 60000
+
+security:
+  approvalTtlSeconds: 300
+  authentication:
+    audience: a1-api
+    enabled: false
+    issuer: a1
+    tokenSecret: auth.token
+    tokenTtlSeconds: 3600
+  encryptedSecretFilePath: ../data/runtime/secrets.enc.json
+  encryptedSecretKey: secrets.master-key
+  rolePermissions:
+    administrator:
+      - "*"
+    operator:
+      - project:*
+      - task:*
+    concierge:
+      - agent:run
+      - task:read
+      - memory:read
+      - memory:write
+      - tool:execute
+
+storage:
+  backupProviderId: local
+  defaultProviderId: local
+  providers:
+    - id: local
+      rootPath: ../data/runtime/objects
+      type: local
+
+workers:
+  databaseBusyTimeoutMs: 5000
+  databasePath: ../data/runtime/workers.sqlite
+  definitions: []
+
+server:
+  bodyLimitBytes: 1048576
+  healthCheckTimeoutMs: 2000
+  host: 127.0.0.1
+  port: 8787
+  requestTimeoutMs: 60000
+  shutdownTimeoutMs: 10000
+  trustProxy: false

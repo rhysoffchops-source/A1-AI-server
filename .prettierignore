@@ -1,0 +1,10 @@
+coverage
+dist
+node_modules
+.modal-venv
+.venv
+data/runtime
+logs
+models/cache
+projects/workspaces
+package-lock.json

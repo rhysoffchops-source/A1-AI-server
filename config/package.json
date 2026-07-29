@@ -1,0 +1,26 @@
+{
+  "name": "@a1/config",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Validated A1 configuration",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --pretty false"
+  },
+  "dependencies": {
+    "yaml": "^2.8.0",
+    "zod": "^4.0.14"
+  }
+}

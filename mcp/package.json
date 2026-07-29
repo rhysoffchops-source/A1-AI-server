@@ -1,0 +1,25 @@
+{
+  "name": "@a1/mcp",
+  "version": "0.6.0",
+  "private": true,
+  "description": "A1 configurable MCP client registry and lifecycle",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --pretty false"
+  },
+  "dependencies": {
+    "@a1/core": "0.2.0"
+  }
+}

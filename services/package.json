@@ -1,0 +1,26 @@
+{
+  "name": "@a1/services",
+  "version": "0.4.0",
+  "private": true,
+  "description": "A1 interchangeable storage and backup services",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --pretty false"
+  },
+  "dependencies": {
+    "@a1/core": "0.2.0",
+    "@aws-sdk/client-s3": "^3.864.0"
+  }
+}

@@ -1,0 +1,12 @@
+services:
+  api:
+    environment:
+      A1_CONFIG_PATH: /opt/a1/config/production.yaml
+      A1_ENVIRONMENT: production
+    env_file:
+      - ${A1_DEPLOY_CONFIG_DIR}/runtime.env
+    volumes:
+      - type: bind
+        source: ${A1_DEPLOY_CONFIG_DIR}/production.yaml
+        target: /opt/a1/config/production.yaml
+        read_only: true

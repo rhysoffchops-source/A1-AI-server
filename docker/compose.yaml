@@ -1,0 +1,27 @@
+name: a1
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    environment:
+      A1_ENVIRONMENT: production
+      A1_LOG_LEVEL: info
+      A1_SERVER_HOST: 0.0.0.0
+      A1_SERVER_PORT: 8787
+    init: true
+    ports:
+      - "127.0.0.1:8787:8787"
+    read_only: true
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    volumes:
+      - a1-data:/opt/a1/data/runtime
+
+volumes:
+  a1-data:
+    name: a1-data

@@ -1,0 +1,25 @@
+{
+  "name": "@a1/core",
+  "version": "0.2.0",
+  "private": true,
+  "description": "A1 kernel contracts and runtime primitives",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --pretty false"
+  },
+  "dependencies": {
+    "pino": "^9.7.0"
+  }
+}

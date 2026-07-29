@@ -1,0 +1,104 @@
+FROM node:22-bookworm-slim AS build
+
+WORKDIR /opt/a1
+
+COPY package.json package-lock.json* ./
+COPY agents/package.json agents/package.json
+COPY api/package.json api/package.json
+COPY config/package.json config/package.json
+COPY core/package.json core/package.json
+COPY databases/package.json databases/package.json
+COPY mcp/package.json mcp/package.json
+COPY memory/package.json memory/package.json
+COPY models/package.json models/package.json
+COPY monitoring/package.json monitoring/package.json
+COPY orchestrator/package.json orchestrator/package.json
+COPY plugins/package.json plugins/package.json
+COPY projects/package.json projects/package.json
+COPY security/package.json security/package.json
+COPY services/package.json services/package.json
+COPY tools/package.json tools/package.json
+COPY ui/package.json ui/package.json
+
+RUN npm ci
+
+COPY tsconfig.json tsconfig.base.json ./
+COPY agents agents
+COPY api api
+COPY config config
+COPY core core
+COPY databases databases
+COPY mcp mcp
+COPY memory memory
+COPY models models
+COPY monitoring monitoring
+COPY orchestrator orchestrator
+COPY plugins plugins
+COPY projects projects
+COPY security security
+COPY services services
+COPY tools tools
+COPY ui ui
+
+RUN npm run build \
+    && npm prune --omit=dev
+
+FROM node:22-bookworm-slim AS runtime
+
+ENV A1_CONFIG_PATH=/opt/a1/config/default.yaml \
+    NODE_ENV=production
+
+WORKDIR /opt/a1
+
+RUN apt-get update \
+    && apt-get install --no-install-recommends --yes ca-certificates openssh-client \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=build --chown=node:node /opt/a1/package.json /opt/a1/package-lock.json ./
+COPY --from=build --chown=node:node /opt/a1/node_modules node_modules
+COPY --from=build --chown=node:node /opt/a1/agents/package.json agents/package.json
+COPY --from=build --chown=node:node /opt/a1/agents/dist agents/dist
+COPY --from=build --chown=node:node /opt/a1/api/package.json api/package.json
+COPY --from=build --chown=node:node /opt/a1/api/dist api/dist
+COPY --from=build --chown=node:node /opt/a1/config/package.json config/package.json
+COPY --from=build --chown=node:node /opt/a1/config/default.yaml config/default.yaml
+COPY --from=build --chown=node:node /opt/a1/config/dist config/dist
+COPY --from=build --chown=node:node /opt/a1/core/package.json core/package.json
+COPY --from=build --chown=node:node /opt/a1/core/dist core/dist
+COPY --from=build --chown=node:node /opt/a1/databases/package.json databases/package.json
+COPY --from=build --chown=node:node /opt/a1/databases/dist databases/dist
+COPY --from=build --chown=node:node /opt/a1/mcp/package.json mcp/package.json
+COPY --from=build --chown=node:node /opt/a1/mcp/dist mcp/dist
+COPY --from=build --chown=node:node /opt/a1/memory/package.json memory/package.json
+COPY --from=build --chown=node:node /opt/a1/memory/dist memory/dist
+COPY --from=build --chown=node:node /opt/a1/models/package.json models/package.json
+COPY --from=build --chown=node:node /opt/a1/models/dist models/dist
+COPY --from=build --chown=node:node /opt/a1/monitoring/package.json monitoring/package.json
+COPY --from=build --chown=node:node /opt/a1/monitoring/dist monitoring/dist
+COPY --from=build --chown=node:node /opt/a1/orchestrator/package.json orchestrator/package.json
+COPY --from=build --chown=node:node /opt/a1/orchestrator/dist orchestrator/dist
+COPY --from=build --chown=node:node /opt/a1/plugins/package.json plugins/package.json
+COPY --from=build --chown=node:node /opt/a1/plugins/dist plugins/dist
+COPY --from=build --chown=node:node /opt/a1/projects/package.json projects/package.json
+COPY --from=build --chown=node:node /opt/a1/projects/dist projects/dist
+COPY --from=build --chown=node:node /opt/a1/security/package.json security/package.json
+COPY --from=build --chown=node:node /opt/a1/security/dist security/dist
+COPY --from=build --chown=node:node /opt/a1/services/package.json services/package.json
+COPY --from=build --chown=node:node /opt/a1/services/dist services/dist
+COPY --from=build --chown=node:node /opt/a1/tools/package.json tools/package.json
+COPY --from=build --chown=node:node /opt/a1/tools/dist tools/dist
+COPY --from=build --chown=node:node /opt/a1/ui/dist ui/dist
+
+RUN mkdir -p /opt/a1/data/runtime \
+    && chown -R node:node /opt/a1/data
+
+USER node
+
+EXPOSE 8787
+
+VOLUME ["/opt/a1/data/runtime"]
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD ["node", "--input-type=module", "--eval", "const response = await fetch('http://127.0.0.1:8787/health/live'); if (!response.ok) process.exit(1);"]
+
+CMD ["node", "api/dist/server.js"]

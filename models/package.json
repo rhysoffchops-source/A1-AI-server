@@ -1,0 +1,25 @@
+{
+  "name": "@a1/models",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Provider-neutral A1 model catalog, adapters, and routing",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --pretty false"
+  },
+  "dependencies": {
+    "@a1/core": "0.2.0"
+  }
+}

@@ -1,0 +1,14 @@
+.git
+.github
+.DS_Store
+.env
+.env.*
+coverage
+data/runtime
+logs
+models/cache
+node_modules
+projects/workspaces
+**/dist
+*.gguf
+*.safetensors

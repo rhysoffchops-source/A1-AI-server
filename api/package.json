@@ -1,0 +1,35 @@
+{
+  "name": "@a1/api",
+  "version": "0.2.0",
+  "private": true,
+  "description": "A1 control-plane HTTP API",
+  "type": "module",
+  "main": "./dist/server.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "start": "node dist/server.js",
+    "typecheck": "tsc -b --pretty false"
+  },
+  "dependencies": {
+    "@a1/agents": "0.8.0",
+    "@a1/config": "0.2.0",
+    "@a1/core": "0.2.0",
+    "@a1/databases": "0.2.0",
+    "@a1/mcp": "0.6.0",
+    "@a1/memory": "0.5.0",
+    "@a1/models": "0.3.0",
+    "@a1/monitoring": "0.9.0",
+    "@a1/orchestrator": "0.2.0",
+    "@a1/plugins": "0.2.0",
+    "@a1/projects": "0.9.0",
+    "@a1/security": "0.7.0",
+    "@a1/services": "0.4.0",
+    "@a1/tools": "0.8.0",
+    "@fastify/helmet": "^13.0.1",
+    "@fastify/static": "^10.1.2",
+    "fastify": "^5.4.0"
+  }
+}

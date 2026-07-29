@@ -1,0 +1,53 @@
+{
+  "name": "@a1/root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A1 autonomous AI platform",
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  },
+  "workspaces": [
+    "agents",
+    "api",
+    "config",
+    "core",
+    "databases",
+    "memory",
+    "mcp",
+    "models",
+    "monitoring",
+    "orchestrator",
+    "plugins",
+    "projects",
+    "security",
+    "services",
+    "tools",
+    "ui"
+  ],
+  "scripts": {
+    "build": "tsc -b && npm run build --workspace @a1/ui",
+    "clean": "tsc -b --clean",
+    "dev": "npm run build && node --watch api/dist/server.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . --max-warnings=0",
+    "pretest": "npm run build",
+    "start": "node api/dist/server.js",
+    "test": "vitest run",
+    "typecheck": "tsc -b --pretty false && npm run typecheck --workspace @a1/ui",
+    "verify": "npm run format:check && npm run lint && npm run typecheck && npm test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^24.1.0",
+    "@types/semver": "^7.7.0",
+    "eslint": "^10.8.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.65.0",
+    "vitest": "^3.2.4"
+  }
+}

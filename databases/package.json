@@ -1,0 +1,27 @@
+{
+  "name": "@a1/databases",
+  "version": "0.2.0",
+  "private": true,
+  "description": "A1 database adapters",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --pretty false"
+  },
+  "dependencies": {
+    "@a1/core": "0.2.0",
+    "@a1/orchestrator": "0.2.0",
+    "better-sqlite3": "^12.2.0"
+  }
+}

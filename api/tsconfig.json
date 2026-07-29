@@ -1,0 +1,55 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "tsBuildInfoFile": "dist/.tsbuildinfo"
+  },
+  "exclude": ["dist", "node_modules", "src/**/*.test.ts"],
+  "include": ["src/**/*.ts"],
+  "references": [
+    {
+      "path": "../agents"
+    },
+    {
+      "path": "../config"
+    },
+    {
+      "path": "../core"
+    },
+    {
+      "path": "../databases"
+    },
+    {
+      "path": "../memory"
+    },
+    {
+      "path": "../mcp"
+    },
+    {
+      "path": "../models"
+    },
+    {
+      "path": "../monitoring"
+    },
+    {
+      "path": "../orchestrator"
+    },
+    {
+      "path": "../plugins"
+    },
+    {
+      "path": "../projects"
+    },
+    {
+      "path": "../security"
+    },
+    {
+      "path": "../services"
+    },
+    {
+      "path": "../tools"
+    }
+  ]
+}

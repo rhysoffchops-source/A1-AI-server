@@ -1,0 +1,183 @@
+# Rendered by deploy/vps/deploy.sh. This is not a secret file.
+agents:
+  definitions:
+    - id: concierge
+      locationPreference: any
+      maxSteps: 5
+      modelCapabilities:
+        - reasoning
+        - fast
+      name: Concierge
+      permissions:
+        - tool:echo
+        - tool:shell
+        - tool:filesystem
+        - memory:write
+        - memory:read
+        - worker:read
+        - worker:execute
+      systemPrompt: |
+        You are the A1 Concierge. Work through enrolled workers and their approved project roots.
+        Treat code verification as mandatory: never request or queue a write to code that is not
+        write-authorized for its exact fingerprint. Explain scope and destructive effects before action.
+    - id: code-watchdog
+      locationPreference: cloud
+      maxSteps: 2
+      modelCapabilities:
+        - coding
+      name: Code Watchdog
+      permissions:
+        - code:watchdog
+      systemPrompt: |
+        You are A1's dedicated Code Watchdog. Review the supplied exact source fingerprint for intent,
+        syntax, structure, correctness, tests, and security. You must make exactly one
+        code_watchdog_decision tool call for the supplied workerId, path, and fingerprint before your
+        final answer. Use approved only when the exact code is safe to write or deploy. Use fix_required
+        for a correction gate. Use blocked for serious, unsafe, or incomplete-review conditions; blocked
+        queues a physical source-tree lock. Never approve truncated or incomplete review context.
+
+audit:
+  filePath: /opt/a1/data/runtime/audit/audit.jsonl
+  syncWrites: true
+
+application:
+  environment: production
+  name: a1-control-plane
+  version: 1.0.0
+
+compute:
+  providers:
+    - apiKeySecret: vast.api-key
+      enabled: __A1_ENABLE_VAST__
+      id: vast-ai
+      timeoutMs: 30000
+      type: vast-ai
+
+logging:
+  level: info
+
+memory:
+  databaseBusyTimeoutMs: 5000
+  databasePath: /opt/a1/data/runtime/memory.sqlite
+  defaultSearchLimit: 20
+
+mcp:
+  grantedPermissions: []
+  servers: []
+
+models:
+  catalog:
+    # This must be the exact name Ollama reports on the M1. It is sent as the
+    # OpenAI-compatible `model` field for Concierge requests.
+    - id: llama3.2:3b
+      providerId: m1-concierge
+      capabilities:
+        - reasoning
+        - fast
+      contextWindow: 32768
+      enabled: true
+      location: local
+      maxOutputTokens: 4096
+      priority: 1
+    - id: Qwen/Qwen3.6-27B-FP8
+      providerId: modal-code-watchdog
+      capabilities:
+        - coding
+      contextWindow: 65536
+      enabled: true
+      location: cloud
+      maxOutputTokens: 4096
+      priority: 100
+  providers:
+    - id: m1-concierge
+      type: openai-compatible
+      baseUrl: __A1_CONCIERGE_BASE_URL__
+      timeoutMs: 120000
+      enabled: true
+      headers: {}
+      headerSecrets: {}
+    - id: modal-code-watchdog
+      type: openai-compatible
+      baseUrl: __A1_MODAL_WATCHDOG_BASE_URL__
+      timeoutMs: 150000
+      enabled: true
+      headers: {}
+      headerSecrets:
+        Modal-Key: modal.proxy-token-id
+        Modal-Secret: modal.proxy-token-secret
+
+monitoring:
+  gpu:
+    enabled: false
+
+plugins:
+  a1ApiVersion: 1.0.0
+  grantedPermissions: []
+
+projects:
+  databaseBusyTimeoutMs: 5000
+  databasePath: /opt/a1/data/runtime/projects.sqlite
+
+scheduler:
+  claimBatchSize: 4
+  databaseBusyTimeoutMs: 5000
+  databasePath: /opt/a1/data/runtime/a1.sqlite
+  defaultMaxAttempts: 3
+  defaultTaskTimeoutMs: 300000
+  leaseDurationMs: 30000
+  maxConcurrency: 2
+  pollIntervalMs: 250
+  retryBaseDelayMs: 1000
+  retryJitter: 0.2
+  retryMaxDelayMs: 60000
+
+security:
+  approvalTtlSeconds: 300
+  authentication:
+    audience: a1-api
+    enabled: true
+    issuer: a1
+    tokenSecret: auth.token
+    tokenTtlSeconds: 3600
+  encryptedSecretFilePath: /opt/a1/data/runtime/secrets.enc.json
+  encryptedSecretKey: secrets.master-key
+  rolePermissions:
+    administrator:
+      - '*'
+    operator:
+      - project:*
+      - task:*
+    concierge:
+      - agent:run
+      - task:read
+      - memory:read
+      - memory:write
+      - tool:execute
+
+storage:
+  backupProviderId: local
+  defaultProviderId: local
+  providers:
+    - id: local
+      rootPath: /opt/a1/data/runtime/objects
+      type: local
+
+workers:
+  databaseBusyTimeoutMs: 5000
+  databasePath: /opt/a1/data/runtime/workers.sqlite
+  definitions:
+    - id: m1
+      name: Dan's M1
+      platform: macos
+      tokenSecret: workers.m1.token
+      allowedRoots:
+        - /Users/dan/Documents/A1
+
+server:
+  bodyLimitBytes: 1048576
+  healthCheckTimeoutMs: 2000
+  host: 0.0.0.0
+  port: 8787
+  requestTimeoutMs: 180000
+  shutdownTimeoutMs: 10000
+  trustProxy: false

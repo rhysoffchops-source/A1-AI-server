@@ -1,0 +1,29 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+deploy/runtime/
+# Local operator credentials and disposable local tooling never belong in project history.
+Modal Credentials.txt
+.modal-venv/
+*.tsbuildinfo
+coverage/
+dist/
+node_modules/
+
+data/runtime/
+logs/*
+models/cache/
+projects/workspaces/
+
+*.gguf
+*.safetensors
+*.onnx
+*.pt
+*.pth
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/

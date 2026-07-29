@@ -1,0 +1,28 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "allowJs": false,
+    "baseUrl": ".",
+    "composite": false,
+    "lib": ["ES2024", "DOM"],
+    "noEmit": true,
+    "paths": {
+      "@a1/config": ["./config/src/index.ts"],
+      "@a1/core": ["./core/src/index.ts"],
+      "@a1/databases": ["./databases/src/index.ts"],
+      "@a1/memory": ["./memory/src/index.ts"],
+      "@a1/mcp": ["./mcp/src/index.ts"],
+      "@a1/models": ["./models/src/index.ts"],
+      "@a1/monitoring": ["./monitoring/src/index.ts"],
+      "@a1/orchestrator": ["./orchestrator/src/index.ts"],
+      "@a1/plugins": ["./plugins/src/index.ts"],
+      "@a1/projects": ["./projects/src/index.ts"],
+      "@a1/security": ["./security/src/index.ts"],
+      "@a1/services": ["./services/src/index.ts"],
+      "@a1/tools": ["./tools/src/index.ts"],
+      "@a1/agents": ["./agents/src/index.ts"]
+    }
+  },
+  "exclude": ["**/dist/**", "**/node_modules/**"],
+  "include": ["**/*.ts"]
+}

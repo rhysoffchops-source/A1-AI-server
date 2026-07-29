@@ -5,13 +5,14 @@ set -euo pipefail
 # M1 installer. This script is deliberately run as root on the VPS.
 
 stage_token_file="${1:-}"
+worker_id="${2:-}"
 project_root="/opt/a1"
 runtime_directory="${project_root}/deploy/runtime"
 runtime_environment="${runtime_directory}/runtime.env"
 rendered_config="${runtime_directory}/production.yaml"
 
 fail() {
-  echo "Remote M1 enrollment: $*" >&2
+  echo "Remote worker enrollment: $*" >&2
   exit 1
 }
 provider_url() {
@@ -25,6 +26,10 @@ provider_url() {
 
 [[ "$(id -u)" == "0" ]] || fail "Run as root on the VPS."
 [[ -f "${stage_token_file}" ]] || fail "Missing transferred M1 worker token."
+case "${worker_id}" in
+  m1|intel) ;;
+  *) fail "Worker id must be m1 or intel." ;;
+esac
 [[ -f "${runtime_environment}" ]] || fail "Missing ${runtime_environment}."
 [[ -f "${rendered_config}" ]] || fail "Deploy A1 before enrolling the M1 worker."
 [[ -d "${project_root}" ]] || fail "Missing ${project_root}."
@@ -37,10 +42,11 @@ concierge_url="$(provider_url m1-concierge)"
 [[ "${concierge_url}" == http://* || "${concierge_url}" == https://* ]] ||
   fail "Could not read the Concierge endpoint from existing A1 configuration."
 
+token_key="A1_SECRET_WORKERS_$(printf '%s' "${worker_id}" | tr '[:lower:]' '[:upper:]')_TOKEN"
 install -d -m 700 "${runtime_directory}"
 temporary_environment="$(mktemp "${runtime_environment}.XXXXXX")"
-grep -v '^A1_SECRET_WORKERS_M1_TOKEN=' "${runtime_environment}" >"${temporary_environment}" || true
-printf 'A1_SECRET_WORKERS_M1_TOKEN=%s\n' "${worker_token}" >>"${temporary_environment}"
+grep -v "^${token_key}=" "${runtime_environment}" >"${temporary_environment}" || true
+printf '%s=%s\n' "${token_key}" "${worker_token}" >>"${temporary_environment}"
 install -m 600 "${temporary_environment}" "${runtime_environment}"
 rm -f "${temporary_environment}"
 
@@ -53,4 +59,4 @@ A1_MODAL_WATCHDOG_BASE_URL="${modal_url}" \
   A1_ENABLE_VAST=false \
   bash deploy/vps/deploy.sh --apply
 
-echo "VPS enrolled the M1 worker definition and restarted A1."
+echo "VPS enrolled the ${worker_id} worker definition and restarted A1."

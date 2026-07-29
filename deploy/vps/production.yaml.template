@@ -172,6 +172,12 @@ workers:
       tokenSecret: workers.m1.token
       allowedRoots:
         - /Users/dan/Documents/A1
+    - id: intel
+      name: Dan's Intel
+      platform: macos
+      tokenSecret: workers.intel.token
+      allowedRoots:
+        - /Users/dan/Documents/A1
 
 server:
   bodyLimitBytes: 1048576

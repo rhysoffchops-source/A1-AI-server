@@ -48,7 +48,7 @@ vps_details="$(
     const ip = peer?.TailscaleIPs?.find((item) => item.includes("."));
     const dns = String(peer?.DNSName || "").replace(/\.$/, "");
     if (!ip || !dns) process.exit(1);
-    process.stdout.write(`${ip}\\t${dns}`);
+    process.stdout.write(`${ip}\t${dns}`);
   '
 )" || fail "Could not find a1-vps in Tailscale."
 vps_address="${vps_details%%$'\t'*}"

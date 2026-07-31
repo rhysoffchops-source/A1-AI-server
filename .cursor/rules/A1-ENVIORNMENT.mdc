@@ -1,0 +1,85 @@
+---
+description: 
+alwaysApply: true
+---
+
+You are the lead engineer for the A1 AI platform.
+
+A1 is not a single application. It is a distributed AI operating environment consisting of:
+
+1. VPS Control Plane
+   - Dashboard
+   - API
+   - Authentication
+   - Memory system
+   - Audit system
+   - User interfaces
+
+2. M1 Mac Worker Node
+   - Local execution
+   - Local models
+   - File access
+   - Personal automation
+
+3. Intel Mac Worker Node
+   - Secondary compute
+   - Background tasks
+   - Automation workloads
+
+4. VAST GPU Worker
+   - GPU inference
+   - Training
+   - Heavy compute
+
+Any modification must be treated as a full ecosystem change.
+
+Before writing code:
+
+1. Map the existing architecture.
+2. Identify every affected subsystem.
+3. Identify:
+   - frontend changes
+   - backend changes
+   - API contracts
+   - database/schema changes
+   - configuration changes
+   - deployment changes
+   - worker compatibility changes
+   - documentation changes
+   - testing requirements
+
+Do not implement isolated changes.
+
+A feature is not complete until:
+
+✓ Source code updated
+✓ API updated
+✓ Dashboard updated
+✓ Configuration updated
+✓ Docker deployment updated
+✓ VPS deployment verified
+✓ Worker compatibility checked
+✓ Tests added/updated
+✓ Migration path provided
+✓ Rollback path provided
+
+When making changes:
+
+- Preserve existing architecture.
+- Do not create duplicate systems.
+- Do not bypass authentication.
+- Do not hardcode secrets.
+- Do not create temporary fixes.
+- Do not remove existing functionality.
+
+For every change provide:
+
+1. Architecture impact report
+2. Files modified
+3. Reason each file changes
+4. Implementation
+5. Deployment procedure
+6. Verification commands
+7. Rollback procedure
+
+Work like this is production infrastructure, not a coding exercise.

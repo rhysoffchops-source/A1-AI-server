@@ -30,9 +30,19 @@ vps_address="$(
   echo "Could not find the a1-vps machine in Tailscale. Open Tailscale and ensure it is connected." >&2
   exit 1
 }
+vps_target="${A1_VPS_SSH_TARGET:-a1-vps}"
 
 echo "Updating the private A1 dashboard on the VPS…"
-tar -cf - ui/src/styles.css | /usr/bin/ssh -F /dev/null -o ConnectTimeout=15 "root@${vps_address}" \
+# Transfer the source used by the Docker build, while preserving the VPS-only
+# runtime secrets and avoiding local dependency/build directories. Copying only
+# the stylesheet leaves API and UI feature changes stranded on the Mac.
+tar \
+  --exclude='./.git' \
+  --exclude='./node_modules' \
+  --exclude='./*/node_modules' \
+  --exclude='./*/dist' \
+  --exclude='./deploy/runtime' \
+  -cf - . | /usr/bin/ssh -o ConnectTimeout=15 "${vps_target}" \
   'tar -xf - -C /opt/a1 && cd /opt/a1 && A1_DEPLOY_CONFIG_DIR=/opt/a1/deploy/runtime docker compose -f docker/compose.yaml -f deploy/vps/compose.production.yaml up --build --detach'
 
 echo "Dashboard updated. Refresh the browser with Command + Shift + R."

@@ -44,7 +44,7 @@ if command -v systemctl >/dev/null && systemctl list-unit-files tailscaled.servi
   systemctl enable --now tailscaled
 else
   install -d -m 700 /var/lib/tailscale
-  nohup tailscaled --state=/var/lib/tailscale/tailscaled.state >/var/log/tailscaled.log 2>&1 &
+  nohup tailscaled --tun=userspace-networking --state=/var/lib/tailscale/tailscaled.state >/var/log/tailscaled.log 2>&1 &
   for attempt in {1..15}; do
     tailscale status >/dev/null 2>&1 && break
     sleep 1

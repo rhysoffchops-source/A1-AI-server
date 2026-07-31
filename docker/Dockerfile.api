@@ -51,7 +51,7 @@ ENV A1_CONFIG_PATH=/opt/a1/config/default.yaml \
 WORKDIR /opt/a1
 
 RUN apt-get update \
-    && apt-get install --no-install-recommends --yes ca-certificates openssh-client \
+    && apt-get install --no-install-recommends --yes ca-certificates openssh-client ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build --chown=node:node /opt/a1/package.json /opt/a1/package-lock.json ./

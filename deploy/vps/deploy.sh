@@ -19,7 +19,7 @@ for argument in "$@"; do
       cat <<'USAGE'
 Usage:
   A1_MODAL_WATCHDOG_BASE_URL=https://<modal-endpoint>/v1 \
-  A1_CONCIERGE_BASE_URL=https://<m1-or-other-concierge-endpoint>/v1 \
+  A1_CONCIERGE_BASE_URL=http://a1-mac.tailffab8e.ts.net:11434/v1 \
   A1_ENABLE_VAST=false \
   bash deploy/vps/deploy.sh --apply
 
@@ -69,6 +69,7 @@ validate_runtime_env() {
   for name in \
     A1_SECRET_AUTH_TOKEN \
     A1_SECRET_SECRETS_MASTER_KEY \
+    A1_SECRET_DASHBOARD_PASSPHRASE \
     A1_SECRET_MODAL_PROXY_TOKEN_ID \
     A1_SECRET_MODAL_PROXY_TOKEN_SECRET; do
     if ! grep -Eq "^${name}=[^[:space:]]+" "$runtime_env" || grep -Eq "^${name}=replace-" "$runtime_env"; then

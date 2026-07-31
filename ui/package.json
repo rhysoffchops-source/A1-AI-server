@@ -5,7 +5,7 @@
   "description": "A1 operational dashboard",
   "type": "module",
   "scripts": {
-    "build": "esbuild src/main.ts --bundle --minify --sourcemap --outfile=dist/app.js && cp src/index.html src/styles.css dist/",
+    "build": "esbuild src/login.ts --bundle --minify --sourcemap --outfile=dist/login.js && cp src/app.html src/login.html dist/",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

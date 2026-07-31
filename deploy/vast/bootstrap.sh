@@ -102,12 +102,12 @@ scp_options=(
   -P "$port"
 )
 remote="${user}@${host}"
-ssh "${ssh_options[@]}" "$remote" "rm -rf '$remote_directory' && mkdir -p '$remote_directory'"
-scp "${scp_options[@]}" \
+ssh "${ssh_options[@]}" -i "$A1_VAST_SSH_KEY" "$remote" "rm -rf '$remote_directory' && mkdir -p '$remote_directory'"
+scp -i "$A1_VAST_SSH_KEY" "${scp_options[@]}" \
   "$project_root/scripts/a1-worker.mjs" \
   "$script_directory/start-vllm.sh" \
   "$script_directory/remote-bootstrap.sh" \
   "$bootstrap_env" \
   "${remote}:${remote_directory}/"
-ssh "${ssh_options[@]}" "$remote" \
+ssh "${ssh_options[@]}" -i "$A1_VAST_SSH_KEY" "$remote" \
   "bash '${remote_directory}/remote-bootstrap.sh' '${remote_directory}/bootstrap.env'"

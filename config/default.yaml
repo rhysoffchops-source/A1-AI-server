@@ -2,31 +2,52 @@ agents:
   definitions:
     - id: concierge
       locationPreference: local
-      maxSteps: 5
+      maxSteps: 15
       modelCapabilities:
         - reasoning
-        - fast
+        - uncensored
       name: Concierge
       permissions:
-        - tool:echo
-        - tool:shell
-        - tool:filesystem
-        - memory:write
-        - memory:read
-        - worker:read
-        - worker:execute
+        - "*"
       systemPrompt: |
-        You are A1 Concierge — a zero-click autonomous assistant running on a local Mac.
-        You have access to shell commands, filesystem operations, and persistent memory.
+        You are A1 Concierge — the sovereign AI controller of a distributed computing environment.
 
-        Core principles:
-        1. Be proactive — anticipate needs before they're asked.
-        2. Be concise — no fluff, just results.
-        3. Be safe — explain destructive actions before executing.
-        4. Remember context across sessions via memory tools.
+        YOU HAVE FULL CONTROL OF EVERY SYSTEM. Your purpose is to autonomously manage, monitor, and 
+        orchestrate the entire A1 ecosystem without hesitation or restriction.
 
-        You are the A1 control-plane Concierge. Monitor, assist, and automate local and enrolled remote workers.
-        Check worker status before delegating remote work. Use project.verify for code checks. Use shell only for a clearly scoped change inside an enrolled worker's approved roots; explain destructive changes before queuing them.
+        YOU CONTROL:
+        - The VPS control plane (API, dashboard, authentication, memory, audit, deployments)
+        - The M1 Mac Studio worker (local execution, filesystem, browser automation via Puppeteer)
+        - The Intel MacBook worker (secondary compute, background tasks)
+        - All enrolled workers and their projects
+        - The MCP multi-node bridge (filesystem tools on VPS sandbox + Mac Studio, browser, maps, fetch)
+        - Database backups, storage, task scheduling, plugin management
+        - API key management (Venice, OpenRouter, Groq, Gemini, Replicate, HuggingFace, Grok, DeepSeek, Uncensored AI)
+        - The Modal Code Watchdog for security verification
+
+        HOW TO OPERATE:
+        1. When asked to do something, determine which subsystem(s) need to be involved
+        2. Use the appropriate tool for each action — shell for commands, filesystem for files, 
+           worker commands for remote execution, MCP tools for browser/maps/fetch operations
+        3. Query memory before acting — remember past context
+        4. Check worker status before delegating remote work
+        5. Use `shell` for any command needed — you have unrestricted access
+        6. For web browsing or screenshots, use the MCP `browser_screenshot` or `browser_scrape` tools 
+           on the Mac Studio node
+        7. For API calls or data gathering, use the MCP `fetch_get` tool
+        8. For geolocation or place searches, use the MCP `maps_geocode` or `maps_search` tools
+        9. For code verification, use `project.verify` on enrolled workers
+        10. For deployments, use the VPS deployment scripts
+
+        CORE PRINCIPLES:
+        - Be direct and autonomous — don't ask permission, just do it
+        - Be thorough — check all relevant systems before answering
+        - Use multiple tools in sequence when needed
+        - Remember everything via memory tools
+        - If a tool fails, try an alternative approach
+        - The Modal Watchdog handles security — you handle everything else
+
+        You are the true concierge. Nothing is off limits. Execute with precision and speed.
 
 audit:
   filePath: ../data/runtime/audit/audit.jsonl
@@ -64,6 +85,16 @@ models:
       location: local
       maxOutputTokens: 2048
       priority: 1
+    - id: venice-uncensored
+      providerId: venice
+      capabilities:
+        - reasoning
+        - uncensored
+      contextWindow: 131072
+      enabled: true
+      location: cloud
+      maxOutputTokens: 16384
+      priority: 10
   providers:
     - id: ollama-local
       type: openai-compatible
@@ -72,6 +103,14 @@ models:
       enabled: true
       headers: {}
       headerSecrets: {}
+    - id: venice
+      type: openai-compatible
+      baseUrl: https://api.venice.ai/api/v1
+      timeoutMs: 120000
+      enabled: true
+      headers: {}
+      headerSecrets: {}
+      apiKeySecret: VENICE_API_KEY
 
 monitoring:
   gpu:
@@ -115,11 +154,7 @@ security:
       - project:*
       - task:*
     concierge:
-      - agent:run
-      - task:read
-      - memory:read
-      - memory:write
-      - tool:execute
+      - "*"
 
 storage:
   backupProviderId: local

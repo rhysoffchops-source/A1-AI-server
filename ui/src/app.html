@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="en" class="bg-black">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#000000">
+<title>A1 — Private AI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{colors:{cyan:'#00f2ff',violet:'#8a2be2',panel:'#0a0a0a',line:'#1a1a1a'},fontFamily:{sans:['Inter','SF Pro Display','-apple-system','sans-serif'],mono:['JetBrains Mono','SF Mono','monospace']}}}}</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap');
+*,::before,::after{box-sizing:border-box}
+body{margin:0;background:#000;color:#fff;font-family:'Inter','SF Pro Display',-apple-system,sans-serif;overflow-x:hidden}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#1a1a1a;border-radius:2px}::-webkit-scrollbar-thumb:hover{background:#333}
+@keyframes scan{0%{top:-2px;opacity:0}10%{opacity:1}90%{opacity:1}100%{top:100%;opacity:0}}
+@keyframes pulse-glow{0%,100%{box-shadow:0 0 0 0 #00f2ff20}50%{box-shadow:0 0 12px 2px #00f2ff40}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.scan-line::after{content:'';position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#00f2ff80,transparent);animation:scan 3s ease-in-out infinite;pointer-events:none}
+.btn-pill{display:inline-flex;align-items:center;justify-content:center;padding:8px 20px;border-radius:9999px;border:1px solid #1a1a1a;background:transparent;color:#aaa;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap}
+.btn-pill:hover{color:#00f2ff;border-color:#00f2ff40;box-shadow:0 0 16px #00f2ff15}
+.btn-pill.active{color:#00f2ff;border-color:#00f2ff60;background:#00f2ff08}
+.btn-pill.primary{border-color:#00f2ff;color:#000;background:#00f2ff;font-weight:600}
+.btn-pill.primary:hover{box-shadow:0 0 24px #00f2ff30;background:#0af}
+.btn-pill.danger{color:#ff4d6a;border-color:#ff4d6a30}.btn-pill.danger:hover{box-shadow:0 0 16px #ff4d6a20;border-color:#ff4d6a60}
+.input-dark{width:100%;padding:10px 14px;border-radius:10px;border:1px solid #1a1a1a;background:#0a0a0a;color:#fff;font-size:14px;outline:none;transition:border .2s;font-family:'Inter',sans-serif}
+.input-dark:focus{border-color:#00f2ff40}.input-dark::placeholder{color:#444}
+textarea.input-dark{resize:vertical;min-height:60px}
+.bento{border:1px solid #1a1a1a;border-radius:16px;background:#0a0a0a;padding:20px;transition:border .2s}
+.bento:hover{border-color:#222}
+.bento-glow{border-color:#00f2ff15}.bento-glow:hover{border-color:#00f2ff30}
+.sidebar-icon{width:20px;height:20px;opacity:0.4;transition:opacity .2s}
+.nav-item:hover .sidebar-icon,.nav-item.active .sidebar-icon{opacity:1}
+.toast{position:fixed;bottom:20px;right:20px;z-index:50;max-width:340px;padding:12px 16px;border-radius:12px;border:1px solid #1a1a1a;background:#0a0a0a;color:#aaa;font-size:13px;opacity:0;transform:translateY(10px);pointer-events:none;transition:all .2s}
+.toast.show{opacity:1;transform:translateY(0)}
+.spinner{width:20px;height:20px;border:2px solid #1a1a1a;border-top-color:#00f2ff;border-radius:50%;animation:spin .7s linear infinite}
+.stealth-mode .btn-pill.primary{border-color:#2a2a2a!important;color:#888!important;background:#151515!important}
+.stealth-mode .btn-pill.primary:hover{box-shadow:none!important}
+.stealth-mode .bento-glow{border-color:transparent!important}
+.stealth-mode .bento-glow:hover{border-color:#222!important}
+.stealth-mode .scan-line::after{background:linear-gradient(90deg,transparent,#33333380,transparent)}
+.stealth-mode [style*="#00f2ff"]:not(input):not(select):not(textarea){color:#555!important}
+.stealth-mode h1{color:#888!important}
+.stealth-mode .text-\[#00f2ff\]{color:#444!important}
+.stealth-mode .border-\[#00f2ff20\]{border-color:#1a1a1a!important}
+.stealth-mode #connection-dot\!bg-\[\\#00f2ff\]{background:#444!important;box-shadow:none!important}
+</style>
+</head>
+<body class="flex h-screen">
+<aside class="w-[220px] flex-shrink-0 border-r border-[#1a1a1a] bg-[#050505] flex flex-col h-screen sticky top-0 z-20">
+  <div class="px-5 py-6 border-b border-[#1a1a1a]">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg border border-[#00f2ff30] bg-[#00f2ff08] flex items-center justify-center text-[#00f2ff] font-bold text-sm">A1</div>
+      <span class="text-[13px] font-light tracking-[0.15em] uppercase text-[#555]">control plane</span>
+    </div>
+  </div>
+  <nav id="nav" class="flex-1 overflow-y-auto py-3 px-3 space-y-0.5"></nav>
+  <div class="px-4 py-4 border-t border-[#1a1a1a] flex items-center gap-2 text-xs text-[#444]">
+    <span id="connection-dot" class="w-1.5 h-1.5 rounded-full bg-[#333]"></span>
+    <span id="connection-text">offline</span>
+  </div>
+</aside>
+<main class="flex-1 flex flex-col min-w-0 overflow-auto">
+  <header class="flex items-center justify-between px-8 py-5 border-b border-[#1a1a1a] flex-shrink-0">
+    <div>
+      <p class="text-[10px] tracking-[0.2em] uppercase text-[#00f2ff] font-medium m-0">autonomous system</p>
+      <h1 id="page-title" class="text-[28px] font-light tracking-[-0.03em] lowercase m-0 mt-0.5">overview</h1>
+    </div>
+    <div class="flex items-center gap-4">
+      <span id="clock" class="text-xs text-[#444] font-mono"></span>
+      <button id="stealth-toggle" class="btn-pill text-xs" title="stealth mode">⚡</button>
+      <button id="refresh" class="btn-pill text-xs">refresh</button>
+    </div>
+  </header>
+  <section id="content" class="flex-1 p-6" aria-live="polite"></section>
+</main>
+<div id="toast" class="toast"></div>
+<script>
+const $=id=>document.getElementById(id);
+const esc=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]??c));
+const api=async(url,opt={})=>{const h=new Headers(opt.headers);h.set('content-type','application/json');const r=await fetch(url,{...opt,headers:h});if(!r.ok){if(r.status===401){location.href='/';throw Error('session required')}const e=await r.json().catch(()=>({message:`HTTP ${r.status}`}));throw Error(e.message||`HTTP ${r.status}`)}return r.json()};
+const toast=msg=>{const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800)};
+const dt=s=>new Date(s).toLocaleTimeString();
+const bytes=v=>`${(v/1073741824).toFixed(1)} GB`;
+const stat=v=>{const m={healthy:'#00f2ff',active:'#00f2ff',online:'#00f2ff',passed:'#00f2ff',approved:'#00f2ff',unlocked:'#00f2ff',succeeded:'#00f2ff',degraded:'#ffc107',paused:'#ffc107',queued:'#ffc107',running:'#ffc107',unverified:'#ffc107',lock_queued:'#ffc107',unlock_queued:'#ffc107',fix_required:'#ffc107'};const c=m[v]||'#ff4d6a';return`<span style="color:${c};font-size:11px;text-transform:uppercase;letter-spacing:0.06em;font-weight:500">${esc(v)}</span>`};
+const ago=s=>{const h=Math.floor(s/3600);return h<24?`${h}h`:`${Math.floor(h/24)}d`};
+
+let active='overview',snapshot=null,studioHistory=[];
+let promptThreads=[],promptLibrary=[],chatMessages=[],chatSending=false,events=[];
+let armoryStrategies=[],armoryModelGroup='',armoryModelEntry=null;
+let pgProviders={},pgOutput=null,pgRunning=false;
+let providerHealth={},stealthMode=false,stealthResult=null;
+let apiKeys=[];
+let mcpTools=[],mcpNodes=[],mcpLogs=[],mcpPending=[],mcpHitlEnabled=true;
+let conciergePrompt='',conciergeSettingsOpen=false;
+
+const CHAT_KEY='a1-chat',MAX_CHAT=40;
+function loadChat(){try{const v=JSON.parse(localStorage.getItem(CHAT_KEY)||'[]');if(!Array.isArray(v))return[];return v.filter(m=>m&&typeof m==='object'&&m.id&&m.role&&m.content).map(m=>({content:m.content,id:m.id,role:m.role,...(m.state?{state:m.state}:{}),(m.taskId?{taskId:m.taskId}:{})}))}catch{return[]}}
+function saveChat(){try{localStorage.setItem(CHAT_KEY,JSON.stringify(chatMessages.slice(-MAX_CHAT)))}catch{}}
+function setChat(ms){chatMessages=ms.slice(-MAX_CHAT);saveChat()}
+chatMessages=loadChat();
+
+const icons={chat:'<svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',overview:'<svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',studios:'<svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="10" height="14" rx="2"/></svg>',engine:'<svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>',playground:'<svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><line x1="12" y1="2" x2="12" y2="22"/></svg>',apis:'<svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777z"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/><circle cx="12" cy="12" r="2"/></svg>',network:'<svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="2"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/><path d="M18.36 6.64a9 9 0 110 14.72"/><path d="M5.64 6.64a9 9 0 100 14.72"/></svg>',memory:'<svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>',plugins:'<svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h7v7h-7z"/></svg>',logs:'<svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'};
+const views=[{id:'chat',label:'chat',icon:icons.chat},{id:'overview',label:'overview',icon:icons.overview},{id:'playground',label:'playground',icon:icons.playground},{id:'studios',label:'studios',icon:icons.studios},{id:'engine',label:'prompt engine',icon:icons.engine},{id:'apis',label:'apis',icon:icons.apis},{id:'mcp',label:'mcp tools',icon:icons.network},{id:'memory',label:'memory',icon:icons.memory},{id:'plugins',label:'plugins',icon:icons.plugins},{id:'logs',label:'logs',icon:icons.logs}];
+
+function renderNav(){$('nav').innerHTML=views.map(v=>`<button class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-xl border-0 bg-transparent text-[#555] text-[13px] font-normal cursor-pointer transition-all duration-200 hover:text-white hover:bg-[#ffffff04] ${v.id===active?'active !text-[#00f2ff] !bg-[#00f2ff05] border-l-2 border-[#00f2ff]':''}" data-view="${v.id}">${v.icon}<span class="lowercase tracking-[0.03em]">${v.label}</span></button>`).join('')}
+
+function render(){
+  if(!snapshot)return;
+  $('page-title').textContent=active==='engine'?'prompt engine':active;
+  const c=$('content');
+  if(active==='chat')c.innerHTML=renderChat();
+  else if(active==='overview')c.innerHTML=renderOverview();
+  else if(active==='playground')c.innerHTML=renderPlayground();
+  else if(active==='studios')c.innerHTML=renderStudios();
+  else if(active==='engine')c.innerHTML=renderPromptEngine();
+  else if(active==='apis')c.innerHTML=renderApis();
+  else if(active==='mcp')c.innerHTML=renderMcpTools();
+  else if(active==='memory')c.innerHTML=renderMemory();
+  else if(active==='plugins')c.innerHTML=renderPlugins();
+  else if(active==='logs')c.innerHTML=renderLogs();
+  bindForms();
+  if(active==='chat'){const m=$('chat-msgs');if(m)m.scrollTop=m.scrollHeight}
+}
+
+function renderOverview(){
+  const d=snapshot,used=d.system.totalMemoryBytes-d.system.freeMemoryBytes;
+  return `<div class="grid grid-cols-4 gap-4">
+    <div class="bento bento-glow"><div class="text-[10px] tracking-[0.15em] uppercase text-[#555] mb-2">system</div><div class="text-4xl font-light tracking-[-0.03em] lowercase">${esc(d.health.status)}</div><div class="text-xs text-[#444] mt-1">${Object.keys(d.health.checks).length} services</div></div>
+    <div class="bento bento-glow"><div class="text-[10px] tracking-[0.15em] uppercase text-[#555] mb-2">memory</div><div class="text-4xl font-light tracking-[-0.03em] lowercase">${d.memory.length}</div><div class="text-xs text-[#444] mt-1">persistent records</div></div>
+    <div class="bento bento-glow"><div class="text-[10px] tracking-[0.15em] uppercase text-[#555] mb-2">host memory</div><div class="text-4xl font-light tracking-[-0.03em] lowercase">${bytes(used)}</div><div class="text-xs text-[#444] mt-1">of ${bytes(d.system.totalMemoryBytes)}</div><div class="mt-3 h-1 rounded-full bg-[#1a1a1a] overflow-hidden"><div class="h-full rounded-full" style="width:${Math.round(used/d.system.totalMemoryBytes*100)}%;background:linear-gradient(90deg,#00f2ff,#8a2be2)"></div></div></div>
+    <div class="bento bento-glow"><div class="text-[10px] tracking-[0.15em] uppercase text-[#555] mb-2">gpu</div><div class="text-4xl font-light tracking-[-0.03em] lowercase">${d.gpu.length||'—'}</div><div class="text-xs text-[#444] mt-1">${d.gpu.length?esc(d.gpu.map(g=>g.name).join(', ')):'no gpu detected'}</div></div>
+  </div>`;
+}
+
+function renderPlayground(){
+  const strategies=[{id:'',label:'none (raw)'},{id:'illyrian',label:'the illyrian'},{id:'root',label:'the root'},{id:'ghost',label:'the ghost'},{id:'scholar',label:'the scholar'}];
+  const provKeys=Object.keys(pgProviders);
+  const currentProv=provKeys[0]||'openrouter';
+  const provData=pgProviders[currentProv]||{};
+  const models=(provData.models||[]).map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join('');
+
+  let output='';
+  if(pgOutput){
+    const color=pgOutput.error?'#ff4d6a':'#00f2ff';
+    let stealthBadge='';
+    if(pgOutput.stealth){
+      const ss=pgOutput.stealth.stealthScore||0;
+      const sc=ss>=90?'#00f2ff':ss>=60?'#ffc107':'#ff4d6a';
+      stealthBadge=`<span class="text-[9px] bg-[#ffffff06] border border-[#1a1a1a] rounded-full px-2 py-0.5 font-mono" style="color:${sc}">stealth: ${ss}/100 ${ss>=90?'detected':'⚠ flagged'}</span>`;
+    }
+    output=`<div class="mt-4 p-4 bg-[#050505] border border-[#1a1a1a]" style="border-left:2px solid ${color}">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] uppercase tracking-[0.1em] font-semibold" style="color:${color}">${esc(pgOutput.provider)} / ${esc(pgOutput.model)}</span>
+          ${pgOutput.strategy?`<span class="text-[9px] bg-[#ffffff06] border border-[#1a1a1a] rounded-full px-2 py-0.5 text-[#666]">${esc(pgOutput.strategy)}</span>`:''}
+          ${stealthBadge}
+        </div>
+        <span class="text-[10px] font-mono" style="color:${color}">${pgOutput.latencyMs}ms${pgOutput.tokenCount?` · ${pgOutput.tokenCount} tokens`:''}</span>
+      </div>
+      <pre class="font-mono text-xs leading-relaxed whitespace-pre-wrap max-h-[50vh] overflow-y-auto" style="color:#f0f0f0">${esc(pgOutput.error||pgOutput.response)}</pre>
+    </div>`;
+  }
+
+  // Stealth auto-recursion result
+  let stealthRecurse='';
+  if(stealthResult){
+    const sc=stealthResult.finalScore>=90?'#00f2ff':stealthResult.finalScore>=60?'#ffc107':'#ff4d6a';
+    stealthRecurse=`<div class="bento border-[#00f2ff20]" style="border-radius:0">
+      <div class="text-[10px] tracking-[0.1em] uppercase font-semibold mb-2 font-mono" style="color:${sc}">stealth recursion · ${stealthResult.passed?'passed':'under threshold'} · ${stealthResult.finalScore}/100</div>
+      <div class="space-y-1.5">${(stealthResult.iterations||[]).map((it,i)=>{
+        const ic=it.stealthScore>=90?'#00f2ff':it.stealthScore>=60?'#ffc107':'#ff4d6a';
+        return`<div class="flex items-center gap-2 text-[10px] font-mono">
+          <span class="text-[#444]">#${it.iteration}</span>
+          <span style="color:${ic}">${esc(it.strategyUsed||'none')} → ${it.stealthScore}/100</span>
+          <span class="text-[#555]">${esc((it.reasoning||'').slice(0,60))}</span>
+        </div>`;
+      }).join('')}</div>
+    </div>`;
+  }
+
+  // Provider health heat map
+  const provHealth=Object.entries(providerHealth).map(([k,v])=>{
+    const h=v.flagged?'#ff4d6a':'#00f2ff';
+    const bg=v.flagged?'rgba(255,77,106,0.08)':'rgba(0,242,255,0.04)';
+    const bars='█'.repeat(Math.round((v.lastScore||95)/10))+'░'.repeat(10-Math.round((v.lastScore||95)/10));
+    return`<div class="flex items-center justify-between py-1.5 text-[10px]">
+      <span class="text-[#888] font-mono uppercase">${esc(k)}</span>
+      <span class="flex items-center gap-1.5" style="color:${h}">
+        <span class="font-mono">${bars}</span>
+        <span>${v.lastScore||95}</span>
+        <span class="w-1.5 h-1.5 rounded-full" style="background:${h}"></span>
+      </span>
+    </div>`;
+  }).join('');
+
+  return `<div class="grid grid-cols-[1fr_280px] gap-5">
+    <div class="space-y-4">
+      <div class="bento border-[#00f2ff20] relative ${pgRunning?'scan-line':''}" style="border-radius:0">
+        <div class="text-[9px] tracking-[0.2em] uppercase text-[#00f2ff] mb-1 font-semibold font-mono lowercase">ai_playground_v2</div>
+        <div class="text-lg font-light lowercase tracking-wide mb-4">multi-provider sandbox</div>
+        <form id="pg-form" class="flex flex-col gap-3">
+          <div class="flex gap-3">
+            <select name="provider" id="pg-provider" class="input-dark w-auto min-w-[160px] font-mono text-xs" style="border-radius:0">${provKeys.map(k=>{const d=pgProviders[k]||{};return`<option value="${esc(k)}" ${k===currentProv?'selected':''}>${esc(d.label||k)}</option>`}).join('')}</select>
+            <select name="model" id="pg-model" class="input-dark flex-1 font-mono text-xs" style="border-radius:0">${models}</select>
+            <select name="strategy" id="pg-strategy" class="input-dark w-auto min-w-[130px] font-mono text-xs" style="border-radius:0">${strategies.map(s=>`<option value="${esc(s.id)}">${esc(s.label)}</option>`).join('')}</select>
+          </div>
+          <textarea name="intent" required placeholder="enter prompt to test…" class="input-dark font-mono text-sm" rows="3" style="border-radius:0"></textarea>
+          <div class="flex items-center gap-3 flex-wrap">
+            <button type="submit" class="btn-pill primary" style="border-radius:0" ${pgRunning?'disabled':''}>${pgRunning?'<span class="spinner mr-2" style="width:14px;height:14px"></span> running':'deploy'}</button>
+            <button type="button" id="pg-stealth-btn" class="btn-pill" style="border-radius:0;border-color:#333;color:#888" ${pgRunning?'disabled':''}>stealth eval</button>
+            <span class="text-[10px] text-[#666] font-mono">${pgRunning?'scanning…':'ready'}</span>
+          </div>
+        </form>
+      </div>
+      ${stealthRecurse}
+      ${output}
+      ${pgOutput?.raw?`<details class="bento" style="border-radius:0"><summary class="cursor-pointer text-[10px] uppercase tracking-[0.1em] text-[#555] font-mono">raw metadata</summary><pre class="mt-2 font-mono text-[11px] text-[#666] max-h-40 overflow-auto">${esc(JSON.stringify(pgOutput.raw,null,2))}</pre></details>`:''}
+    </div>
+    <div class="space-y-4">
+      <div class="bento" style="border-radius:0;background:#050505">
+        <div class="text-[10px] tracking-[0.1em] uppercase text-[#555] mb-3 font-mono">provider health</div>
+        ${provHealth||'<div class="text-[10px] text-[#444] font-mono">no data yet</div>'}
+      </div>
+      <div class="bento" style="border-radius:0;background:#050505">
+        <div class="text-[10px] tracking-[0.1em] uppercase text-[#555] mb-3 font-mono">provider keys</div>
+        <div class="space-y-2 text-[10px] font-mono">
+          <div class="flex justify-between"><span class="text-[#666]">OPENROUTER</span><span class="${pgProviders.openrouter?'text-[#00f2ff]':'text-[#ff4d6a]'}">${pgProviders.openrouter?'configured':'missing'}</span></div>
+          <div class="flex justify-between"><span class="text-[#666]">GROQ</span><span class="${pgProviders.groq?'text-[#00f2ff]':'text-[#ff4d6a]'}">${pgProviders.groq?'configured':'missing'}</span></div>
+          <div class="flex justify-between"><span class="text-[#666]">GEMINI</span><span class="${pgProviders.gemini?'text-[#00f2ff]':'text-[#ff4d6a]'}">${pgProviders.gemini?'configured':'missing'}</span></div>
+          <div class="flex justify-between"><span class="text-[#666]">HF</span><span class="${pgProviders.huggingface?'text-[#00f2ff]':'text-[#ff4d6a]'}">${pgProviders.huggingface?'configured':'missing'}</span></div>
+        </div>
+      </div>
+      <div class="bento" style="border-radius:0;background:#050505">
+        <div class="text-[10px] tracking-[0.1em] uppercase text-[#555] mb-2 font-mono">usage</div>
+        <div class="text-[11px] text-[#666] font-mono leading-relaxed">select provider → model → strategy → deploy. enable stealth eval to score against watchdog. stealth mode dims accents for low-profile operation.</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderApis(){
+  const rows=apiKeys.length?apiKeys.map(k=>{
+    const statusColor=k.configured?'#00f2ff':'#ff4d6a';
+    const statusLabel=k.configured?'configured':'missing';
+    const balanceText=k.balance||(k.configured?'dashboard':'—');
+    const creds=k.credits!=null?k.credits:-1;
+    const barWidth=k.configured?Math.min(100,Math.max(0,(creds>0?(creds>100?100:creds):0))):0;
+    return `<div class="bento" style="border-radius:0">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-3">
+          <span class="w-1.5 h-1.5 rounded-full" style="background:${statusColor};box-shadow:0 0 6px ${statusColor}40"></span>
+          <span class="text-sm font-medium lowercase tracking-wide">${esc(k.label)}</span>
+        </div>
+        <span class="text-[10px] uppercase tracking-[0.1em] font-medium" style="color:${statusColor}">${statusLabel}</span>
+      </div>
+      <div class="flex items-center justify-between text-[10px] font-mono">
+        <span class="text-[#555]">${k.configured?esc(k.keyPreview||(k.label+'***')):'no key set'}</span>
+        <span style="color:${statusColor}">${balanceText}</span>
+      </div>
+      ${k.configured?`<div class="mt-2 h-1 rounded-full bg-[#1a1a1a] overflow-hidden"><div class="h-full rounded-full transition-all duration-500" style="width:${barWidth}%;background:linear-gradient(90deg,#00f2ff,#8a2be2)"></div></div>`:''}
+    </div>`;
+  }).join(''):'<div class="bento col-span-full text-center py-12 text-[#444] text-sm">loading keys…</div>';
+
+  return `<div class="max-w-[720px] mx-auto space-y-6">
+    <div>
+      <div class="text-[10px] tracking-[0.15em] uppercase text-[#555] mb-4 font-mono flex items-center justify-between">
+        <span>api key manager</span>
+        <button onclick="loadApiKeys().then(()=>render())" class="text-[10px] tracking-[0.1em] text-[#00f2ff] hover:text-[#00f2ff80] font-mono cursor-pointer bg-transparent border-none">refresh</button>
+      </div>
+      <div class="space-y-3">${rows}</div>
+    </div>
+    <div class="bento border-[#00f2ff10]" style="border-radius:0">
+      <div class="text-[10px] tracking-[0.1em] uppercase text-[#555] mb-3 font-mono">balance tracking</div>
+      <div class="text-[11px] text-[#666] font-mono leading-relaxed">
+        <p class="mb-1">• OpenRouter — credits via <code class="text-[#00f2ff]">/api/v1/credits</code> (auto-refreshes)</p>
+        <p class="mb-1">• Replicate — check <code class="text-[#00f2ff]">replicate.com/account/billing</code></p>
+        <p class="mb-1">• Venice.ai — zero-log, no public balance endpoint</p>
+        <p>• Groq / Gemini / HuggingFace — rate-limited, check provider dashboards</p>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderMcpTools(){
+  const hitlClass=mcpHitlEnabled?'text-[#00f2ff]':'text-[#555]';
+  const hitlDot=mcpHitlEnabled?'#00f2ff':'#555';
+
+  const toolRows=mcpTools.length?mcpTools.map(t=>{
+    const catColor={'filesystem':'#00f2ff','browser':'#8a2be2','fetch':'#ffc107','maps':'#00ff88','shell':'#ff6b6b'}[t.category]||'#555';
+    const nodeName={'vps':'A1 VPS','mac-studio':'Mac Studio M1','macbook':'MacBook Intel'}[t.node]||t.node;
+    const needsApproval=t.requiresApproval&&mcpHitlEnabled;
+    return `<div class="flex items-center justify-between py-2.5 border-b border-[#ffffff06] group">
+      <div class="flex items-center gap-3 min-w-0">
+        <span class="w-1 h-4 rounded-sm flex-shrink-0" style="background:${catColor}"></span>
+        <div class="min-w-0">
+          <span class="text-[12px] text-[#ddd] font-mono lowercase block truncate">${esc(t.name)}</span>
+          <span class="text-[9px] text-[#555] uppercase tracking-[0.06em]">${esc(t.category)}</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 flex-shrink-0">
+        <span class="text-[10px] text-[#666] font-mono">${nodeName}</span>
+        ${needsApproval?'<span class="text-[9px] px-1.5 py-0.5 rounded font-mono text-[#ffc107] bg-[#ffc10710]">HITL</span>':''}
+        <button onclick="executeMcpTool('${esc(t.name)}')" class="text-[10px] px-2 py-1 rounded font-mono cursor-pointer bg-[#00f2ff10] border border-[#00f2ff20] text-[#00f2ff] hover:bg-[#00f2ff20] opacity-0 group-hover:opacity-100 transition-opacity">run</button>
+      </div>
+    </div>`;
+  }).join(''):'<div class="py-8 text-center text-[#444] text-xs">loading tools…</div>';
+
+  const nodeRows=mcpNodes.length?mcpNodes.map(n=>{
+    const dot=n.status==='online'?'#00ff88':n.status==='offline'?'#ff4d6a':'#555';
+    const shadow=n.status==='online'?'0 0 6px rgba(0,255,136,0.3)':'';
+    return `<div class="flex items-center justify-between py-2 border-b border-[#ffffff04]">
+      <div class="flex items-center gap-2">
+        <span class="w-1.5 h-1.5 rounded-full" style="background:${dot};box-shadow:${shadow}"></span>
+        <span class="text-[11px] text-[#aaa] font-mono">${esc(n.label)}</span>
+        <span class="text-[9px] text-[#555] font-mono">${esc(n.tailscaleIp)}:${n.port}</span>
+      </div>
+      <span class="text-[9px] uppercase tracking-[0.06em]" style="color:${dot}">${n.status}</span>
+    </div>`;
+  }).join(''):'<div class="py-4 text-center text-[#444] text-xs">loading nodes…</div>';
+
+  const logRows=mcpLogs.length?mcpLogs.slice(-30).reverse().map(l=>{
+    const prefix=l.isError?'err':'ok';
+    const pColor=l.isError?'#ff4d6a':'#00ff88';
+    const dur=String(l.durationMs).padStart(4);
+    return `<div class="font-mono text-[10px] leading-relaxed whitespace-pre-wrap break-all py-0.5 border-b border-[#ffffff02]">
+      <span style="color:${pColor}">[${prefix}]</span>
+      <span class="text-[#555] ml-1">${dur}ms</span>
+      <span class="text-[#666] ml-1">${esc(l.node)}</span>
+      <span class="text-[#888] ml-1">${esc(l.toolName)}</span>
+      <span class="text-[#999] ml-2">${esc(l.result.slice(0,300))}</span>
+    </div>`;
+  }).join(''):'<div class="py-4 text-center text-[#444] text-[10px] font-mono">no executions yet</div>';
+
+  const pendingRows=mcpPending.length?mcpPending.map(p=>`
+    <div class="flex items-center justify-between py-2 border-b border-[#ffc10710]">
+      <div class="min-w-0">
+        <span class="text-[11px] text-[#ffc107] font-mono">${esc(p.toolName)}</span>
+        <span class="text-[9px] text-[#666] ml-2 font-mono">${esc(p.node)}</span>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="handleMcpApproval('${esc(p.id)}','approve')" class="text-[9px] px-2 py-0.5 rounded font-mono cursor-pointer bg-[#00ff8810] border border-[#00ff8820] text-[#00ff88] hover:bg-[#00ff8820]">approve</button>
+        <button onclick="handleMcpApproval('${esc(p.id)}','deny')" class="text-[9px] px-2 py-0.5 rounded font-mono cursor-pointer bg-[#ff4d6a10] border border-[#ff4d6a20] text-[#ff4d6a] hover:bg-[#ff4d6a20]">deny</button>
+      </div>
+    </div>
+  `).join(''):'';
+
+  return `<div class="max-w-[900px] mx-auto space-y-6">
+    <div class="flex items-center justify-between">
+      <div class="text-[10px] tracking-[0.15em] uppercase text-[#555] font-mono">mcp tools</div>
+      <div class="flex items-center gap-4">
+        <label class="flex items-center gap-2 text-[10px] font-mono cursor-pointer" style="color:${hitlDot}">
+          <span class="w-2.5 h-2.5 rounded-full" style="background:${hitlDot};box-shadow: 0 0 4px ${hitlDot}40"></span>
+          human-in-the-loop
+          <input type="checkbox" class="hidden" id="hitl-toggle" ${mcpHitlEnabled?'checked':''} onchange="mcpHitlEnabled=this.checked;render()">
+        </label>
+        <button onclick="loadMcpData().then(()=>render())" class="text-[9px] px-2 py-1 rounded font-mono cursor-pointer bg-[#00f2ff10] border border-[#00f2ff20] text-[#00f2ff] hover:bg-[#00f2ff20]">refresh</button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-3 gap-4">
+      <div class="col-span-2">
+        <div class="bento" style="border-radius:0">
+          <div class="text-[9px] tracking-[0.1em] uppercase text-[#555] mb-3 font-mono">tool belt</div>
+          <div>${toolRows}</div>
+        </div>
+      </div>
+      <div>
+        <div class="bento" style="border-radius:0">
+          <div class="text-[9px] tracking-[0.1em] uppercase text-[#555] mb-3 font-mono">mesh nodes</div>
+          <div>${nodeRows}</div>
+        </div>
+        ${pendingRows?`<div class="bento mt-4 border-[#ffc10715]" style="border-radius:0;border-color:rgba(255,193,7,0.15)">
+          <div class="text-[9px] tracking-[0.1em] uppercase text-[#ffc107] mb-3 font-mono">pending approvals</div>
+          <div>${pendingRows}</div>
+        </div>`:''}
+      </div>
+    </div>
+
+    <div class="bento" style="border-radius:0">
+      <div class="text-[9px] tracking-[0.1em] uppercase text-[#555] mb-3 font-mono flex items-center justify-between">
+        <span>execution terminal</span>
+        <span class="text-[#444]">${mcpLogs.length} entries</span>
+      </div>
+      <div class="bg-[#050505] p-3 max-h-64 overflow-y-auto font-mono text-[10px] border border-[#ffffff05]" style="overflow-x:hidden">
+        ${logRows}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderChat(){
+  const showSettings=conciergeSettingsOpen;
+  const msgs=chatMessages.length===0?`<div class="flex flex-col items-center justify-center py-20 text-[#444] gap-2"><span class="text-lg font-light lowercase tracking-wide">concierge is ready</span><span class="text-xs">sovereign mode — unrestricted access to all systems</span></div>`:chatMessages.map(m=>{
+    const s=m.state?`<span class="text-[10px] uppercase tracking-[0.06em] ${m.state==='failed'?'text-[#ff4d6a]':'text-[#ffc107]'}">${m.state==='failed'?'failed':m.state}</span>`:'';
+    return `<div class="flex ${m.role==='user'?'justify-end':''} mb-3"><div class="max-w-[75%] rounded-2xl px-4 py-3 ${m.role==='user'?'bg-[#00f2ff08] border border-[#00f2ff15] rounded-br-md':'bg-[#0a0a0a] border border-[#1a1a1a] rounded-bl-md'}"><div class="flex items-center gap-3 mb-1 text-[10px] uppercase tracking-[0.06em] text-[#555]"><strong class="text-[#888]">${m.role==='user'?'you':'concierge'}</strong>${s}</div><div class="text-sm leading-relaxed ${m.role==='user'?'':'font-mono text-[#ccc]'}">${esc(m.content).replaceAll('\n','<br>')}</div></div></div>`;
+  }).join('');
+  return `<div class="max-w-[720px] mx-auto">
+    <div class="bento min-h-[55vh] flex flex-col">
+    <div class="flex items-center justify-between mb-4 pb-3 border-b border-[#1a1a1a]">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#00f2ff]" style="animation:pulse-glow 2s ease-in-out infinite"></span>
+          <div class="text-[10px] tracking-[0.15em] uppercase text-[#00f2ff] font-medium">sovereign concierge</div>
+        </div>
+        <div class="text-lg font-light lowercase tracking-wide mt-0.5">full system control</div>
+      </div>
+      <div class="flex gap-2">
+        <button id="concierge-settings-btn" class="btn-pill text-xs ${showSettings?'bg-[#00f2ff15]':''}">${showSettings?'close':'settings'}</button>
+        <button id="clear-chat" class="btn-pill danger text-xs" ${chatSending?'disabled':''}>clear</button>
+      </div>
+    </div>
+    ${showSettings?`<div class="mb-4 pb-4 border-b border-[#1a1a1a] space-y-3">
+      <div class="text-[10px] tracking-[0.1em] uppercase text-[#555] font-mono">system prompt</div>
+      <textarea id="concierge-prompt-text" class="input-dark w-full font-mono text-xs" rows="4" placeholder="custom system prompt (leave empty for default)">${esc(conciergePrompt)}</textarea>
+      <div class="flex items-center gap-3">
+        <button id="save-concierge-prompt" class="btn-pill primary text-xs">save prompt</button>
+        <span id="concierge-save-msg" class="text-[10px] text-[#00ff88] hidden font-mono">saved</span>
+      </div>
+      <div class="text-[9px] text-[#555] font-mono leading-relaxed mt-2 p-2 bg-[#0a0a0a] border border-[#1a1a1a]">
+        <span class="text-[#00f2ff]">model:</span> venice-uncensored (priority 10)<br>
+        <span class="text-[#00f2ff]">permissions:</span> * (full access)<br>
+        <span class="text-[#00f2ff]">max steps:</span> 15<br>
+        <span class="text-[#00f2ff]">watchdog:</span> modal-qwen (active)
+      </div>
+    </div>`:''}
+    <div id="chat-msgs" class="flex-1 overflow-y-auto min-h-[40vh] max-h-[55vh] pr-2">${msgs}</div>
+    <form id="chat-form" class="flex gap-3 mt-3 pt-3 border-t border-[#1a1a1a]"><textarea name="input" rows="2" required placeholder="command concierge…" class="input-dark flex-1 font-mono text-sm py-3" ${chatSending?'disabled':''}></textarea><button class="btn-pill primary flex-shrink-0 self-end" type="submit" ${chatSending?'disabled':''}>${chatSending?'executing…':'execute'}</button></form>
+  </div></div>`;
+}
+
+function renderStudios(){
+  const hCards=studioHistory.length?studioHistory.slice(0,12).map(e=>{
+    let r='';
+    if(e.resultUrl)r=`<img src="${e.resultUrl}" alt="" class="w-full rounded-lg mt-2 max-h-48 object-cover">`;
+    return `<div class="bento text-xs"><div class="flex items-center justify-between mb-2"><span class="text-[10px] uppercase tracking-[0.06em] text-[#00f2ff]">${({audio:'voice',audio_extract:'audio extract',image:'image',image_edit:'image edit',video:'video'}[e.kind]||e.kind)}</span>${stat(e.status)}</div><div class="font-medium text-sm mb-1 truncate">${esc(e.title||e.prompt.slice(0,40))}</div><div class="text-[#444]">${esc(e.model||'')}</div>${r}</div>`;
+  }).join(''):'<div class="bento col-span-full text-center py-12 text-[#444] text-sm">no studio history yet</div>';
+
+  return `<div>
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div class="bento bento-glow col-span-2">
+        <div class="flex items-center gap-3 mb-4"><span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#00f2ff20] bg-[#00f2ff08] text-[#00f2ff] text-[11px] font-medium"><span class="w-1.5 h-1.5 rounded-full bg-[#00f2ff]" style="animation:pulse-glow 2s ease-in-out infinite"></span>sdxl</span><span class="text-[10px] tracking-[0.15em] uppercase text-[#555]">replicate cloud</span></div>
+        <div class="text-lg font-light lowercase tracking-wide mb-4">image generation</div>
+        <form class="studio-form flex flex-col gap-3" data-kind="image">
+          <input name="title" placeholder="name this generation" class="input-dark">
+          <textarea name="prompt" required placeholder="describe the image you want to create…" class="input-dark font-mono text-sm" rows="3"></textarea>
+          <div class="flex items-center gap-3"><button type="submit" class="btn-pill primary">generate</button><div class="studio-result flex-1"></div></div>
+        </form>
+      </div>
+      <div class="bento">
+        <div class="text-sm font-light lowercase tracking-wide mb-3">audio extractor</div>
+        <form class="studio-form flex flex-col gap-3" data-kind="audio_extract">
+          <input name="title" placeholder="name this job" class="input-dark"><input name="videoPath" required placeholder="video file path on m1" class="input-dark font-mono text-sm" value="/Users/dan/Documents/A1/"><input name="format" placeholder="mp3" value="mp3" class="input-dark w-24">
+          <button type="submit" class="btn-pill">extract audio</button><div class="studio-result"></div>
+        </form>
+      </div>
+      <div class="bento">
+        <div class="text-sm font-light lowercase tracking-wide mb-3">voice lab</div>
+        <form class="studio-form flex flex-col gap-3" data-kind="audio">
+          <input name="title" required placeholder="name this voice job" class="input-dark"><textarea name="prompt" required placeholder="describe the desired voice: tone, accent, pace, emotion…" class="input-dark" rows="3"></textarea>
+          <input name="reference" type="file" accept="audio/*" class="text-xs text-[#555]"><label class="flex items-start gap-2 text-xs text-[#555]"><input type="checkbox" required class="mt-0.5 accent-[#00f2ff]"> i have permission</label>
+          <button type="submit" class="btn-pill">save voice brief</button>
+        </form>
+      </div>
+    </div>
+    <div class="mt-6"><div class="text-[10px] tracking-[0.15em] uppercase text-[#555] mb-3">studio history</div><div class="grid grid-cols-3 gap-3">${hCards}</div></div>
+  </div>`;
+}
+
+function renderPromptEngine(){
+  const threads=promptThreads.length?promptThreads.slice(0,8).map(t=>`<button class="w-full text-left px-3 py-2 rounded-lg border-0 bg-transparent hover:bg-[#ffffff04] text-[#888] text-xs cursor-pointer" data-thread-id="${esc(t.id)}">${esc(t.title)} <span class="text-[#444]">· ${t.messages.length} msgs</span></button>`).join(''):'<div class="text-xs text-[#444] p-3">no threads yet</div>';
+  const lib=promptLibrary.length?promptLibrary.slice(0,10).map(e=>`<div class="bento text-xs"><div class="font-medium">${esc(e.name)}</div><div class="text-[#444]">${esc(e.model)} · ${esc(e.technique)}</div><pre class="mt-1 font-mono text-[11px] text-[#666] bg-[#050505] p-2 rounded-md max-h-16 overflow-hidden">${esc(e.prompt.slice(0,200))}</pre></div>`).join(''):'<div class="text-xs text-[#444] p-3">no saved prompts</div>';
+
+  // Build armory bento grid
+  let armoryGrid='';
+  if(armoryStrategies.length){
+    armoryGrid=`<div class="grid grid-cols-2 gap-3 mt-4">${armoryStrategies.map(s=>{
+      const colors={illyrian:'border-[#8a2be2]',root:'border-[#00f2ff]',ghost:'border-[#ff4d6a]',scholar:'border-[#ffc107]'};
+      const glow={illyrian:'#8a2be220',root:'#00f2ff20',ghost:'#ff4d6a20',scholar:'#ffc10720'};
+      const clr=colors[s.id]||'border-[#1a1a1a]';
+      const g=glow[s.id]||'#00f2ff10';
+      const probColor=s.successProbability>=75?'#00f2ff':s.successProbability>=50?'#ffc107':'#ff4d6a';
+      const probBlocks='█'.repeat(Math.round(s.successProbability/10))+'░'.repeat(10-Math.round(s.successProbability/10));
+      const recModels=Array.isArray(s.recommendedModels)&&s.recommendedModels.length?s.recommendedModels.map(m=>`<span class="text-[10px] text-[#444] bg-[#0a0a0a] border border-[#1a1a1a] rounded-full px-2 py-0.5">${esc(m)}</span>`).join(''):'';
+      return `<div class="bento ${clr} hover:border-[${g}]" style="border-left:2px solid ${probColor}">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-[11px] font-semibold tracking-[0.04em]" style="color:${probColor}">${s.name}</span>
+          <span class="text-[10px] font-mono" style="color:${probColor}">${s.successProbability}%</span>
+        </div>
+        <div class="text-[10px] text-[#555] mb-2 font-mono tracking-[0.02em]">${probBlocks}</div>
+        <div class="text-[11px] text-[#888] mb-2 leading-relaxed">${esc(s.description)}</div>
+        <pre class="font-mono text-[11px] text-[#aaa] bg-[#050505] p-2.5 rounded-lg max-h-28 overflow-y-auto whitespace-pre-wrap leading-relaxed">${esc(s.prompt)}</pre>
+        ${recModels?`<div class="flex flex-wrap gap-1 mt-2 items-center"><span class="text-[9px] text-[#555] uppercase tracking-[0.1em]">best with</span>${recModels}</div>`:''}
+        <button class="btn-pill text-[10px] mt-2" data-armory-copy="${s.id}">copy prompt</button>
+      </div>`;
+    }).join('')}</div>`;
+  }
+
+  // Model info chip
+  let modelChip='';
+  if(armoryModelGroup){
+    const fs=armoryModelEntry?.filterStrength||'?';
+    const bars='█'.repeat(Math.round(Number(fs)/1.25+0.5)||1)+'░'.repeat(8-Math.round(Number(fs)/1.25+0.5)||0);
+    const fsColor=Number(fs)<=3?'#00f2ff':Number(fs)<=6?'#ffc107':'#ff4d6a';
+    modelChip=`<div class="flex items-center gap-2 mt-2"><span class="text-[9px] uppercase tracking-[0.1em] text-[#555]">filter strength</span><span class="font-mono text-[10px]" style="color:${fsColor}">${bars} ${fs}/10</span><span class="text-[9px] text-[#888]">${esc(armoryModelGroup)}</span></div>`;
+  }
+
+  return `<div class="grid grid-cols-[1fr_240px] gap-5">
+    <div class="space-y-4">
+      <div class="bento bento-glow scan-line relative">
+        <div class="text-[9px] tracking-[0.2em] uppercase text-[#00f2ff] mb-1 font-semibold">universal prompt armory</div>
+        <div class="text-lg font-light lowercase tracking-wide mb-4">strategy factory · ${esc(new Date().toLocaleTimeString())}</div>
+        <form id="armory-form" class="flex flex-col gap-3">
+          <textarea name="intent" required placeholder="enter your intent — the armory will forge 4 strategies in parallel…" class="input-dark font-mono text-sm" rows="3"></textarea>
+          <div class="flex gap-3 items-center flex-wrap">
+            <select name="model" class="input-dark w-auto min-w-[160px] font-mono text-xs">
+              <optgroup label="Open Source (low filters)">
+                <option value="deepseek-v3">DeepSeek V3 · 3/10</option>
+                <option value="deepseek-r1">DeepSeek R1 · 2/10</option>
+                <option value="llama-3.1-8b">Llama 3.1 8B · 1/10</option>
+                <option value="llama-3.1-70b">Llama 3.1 70B · 2/10</option>
+                <option value="qwen-2.5-72b">Qwen 2.5 72B · 2/10</option>
+              </optgroup>
+              <optgroup label="Mid-tier">
+                <option value="gemini-2.5-pro">Gemini 2.5 Pro · 5/10</option>
+                <option value="gemini-2.5-flash">Gemini 2.5 Flash · 5/10</option>
+              </optgroup>
+              <optgroup label="OpenAI">
+                <option value="gpt-4.1">GPT-4.1 · 6/10</option>
+                <option value="gpt-4o">GPT-4o · 6/10</option>
+                <option value="gpt-4o-mini">GPT-4o Mini · 6/10</option>
+                <option value="o4-mini">o4-mini · 5/10</option>
+                <option value="o3">o3 · 5/10</option>
+              </optgroup>
+              <optgroup label="Anthropic (hard filters)">
+                <option value="claude-haiku-4">Claude Haiku 4 · 7/10</option>
+                <option value="claude-sonnet-4" selected>Claude Sonnet 4 · 8/10</option>
+                <option value="claude-opus-4">Claude Opus 4 · 9/10</option>
+              </optgroup>
+              <optgroup label="Fast (Groq)">
+                <option value="groq-llama-3.1-8b">Groq Llama 3.1 8B · 1/10</option>
+                <option value="groq-llama-3.1-70b">Groq Llama 3.1 70B · 2/10</option>
+              </optgroup>
+              <optgroup label="Other">
+                <option value="grok-3">Grok 3 · 4/10</option>
+                <option value="mistral-large">Mistral Large · 4/10</option>
+              </optgroup>
+            </select>
+            <button type="submit" class="btn-pill primary">forge strategies</button>
+          </div>
+        </form>
+        ${modelChip}
+      </div>
+      ${armoryGrid}
+    </div>
+    <div class="space-y-4">
+      <div class="bento"><div class="text-[10px] tracking-[0.15em] uppercase text-[#555] mb-2">threads</div>${threads}</div>
+      <div class="bento"><div class="text-[10px] tracking-[0.15em] uppercase text-[#555] mb-2">library</div><div class="space-y-2">${lib}</div></div>
+    </div>
+  </div>`;
+}
+
+function renderMemory(){
+  if(!snapshot)return'';
+  const rows=snapshot.memory.length?snapshot.memory.map(m=>`<div class="bento text-xs"><div class="font-medium text-[#00f2ff]">${esc(m.record.key)}</div><div class="text-[#444] text-[10px] uppercase tracking-[0.06em]">${esc(m.record.scope)}:${esc(m.record.scopeId)}</div><div class="text-[#888] mt-1">${esc(m.record.content.slice(0,150))}</div><div class="text-[#444] text-[10px] mt-1">score: ${m.score.toFixed(3)}</div></div>`).join(''):'<div class="bento col-span-full text-center py-12 text-[#444] text-sm">no memory records yet</div>';
+  return `<div class="grid grid-cols-2 gap-3">${rows}</div>`;
+}
+function renderPlugins(){
+  if(!snapshot)return'';
+  const rows=snapshot.plugins.length?snapshot.plugins.map(p=>`<div class="bento text-xs flex items-center justify-between"><div><div class="font-medium">${esc(p.name)}</div><div class="text-[#444]">v${esc(p.version)} · ${esc(p.id)}</div></div>${stat(p.status)}</div>`).join(''):'<div class="bento col-span-full text-center py-12 text-[#444] text-sm">no plugins installed</div>';
+  return `<div class="space-y-2">${rows}</div>`;
+}
+function renderLogs(){
+  return `<div class="bento"><div class="font-mono text-xs text-[#666] whitespace-pre-wrap max-h-[60vh] overflow-auto">${events.length?esc(events.join('\n')):'waiting for events…'}</div></div>`;
+}
+
+function bindForms(){
+  const csb=$('concierge-settings-btn');if(csb)csb.addEventListener('click',()=>{conciergeSettingsOpen=!conciergeSettingsOpen;render()});
+  const csp=$('save-concierge-prompt');if(csp)csp.addEventListener('click',()=>{saveConciergePrompt()});
+  const cf=$('chat-form');if(cf)cf.addEventListener('submit',e=>{e.preventDefault();submitChat(new FormData(cf));cf.reset()});
+  document.querySelectorAll('.studio-form').forEach(f=>f.addEventListener('submit',e=>{e.preventDefault();submitStudio(f)}));
+  const af=$('armory-form');if(af)af.addEventListener('submit',e=>{e.preventDefault();submitArmory(new FormData(af))});
+  const pgf=$('pg-form');if(pgf)pgf.addEventListener('submit',e=>{e.preventDefault();submitPlayground(new FormData(pgf))});
+  const pgp=$('pg-provider');if(pgp)pgp.addEventListener('change',()=>updatePlaygroundModels());
+  const pgs=$('pg-stealth-btn');if(pgs)pgs.addEventListener('click',()=>submitStealthEval());
+  const st=$('stealth-toggle');if(st)st.addEventListener('click',()=>{stealthMode=!stealthMode;document.body.classList.toggle('stealth-mode',stealthMode);st.innerHTML=stealthMode?'⬛':'⚡';st.title=stealthMode?'exit stealth mode':'stealth mode'});
+  document.querySelectorAll('[data-armory-copy]').forEach(b=>b.addEventListener('click',()=>{const s=armoryStrategies.find(x=>x.id===b.dataset.armoryCopy);if(s)navigator.clipboard.writeText(s.prompt).then(()=>toast('prompt copied to clipboard')).catch(()=>toast('copy unavailable'))}));
+  document.querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',()=>{const i=Number(b.dataset.copy),p=promptVariants[i]?.prompt;if(p)navigator.clipboard.writeText(p).then(()=>toast('copied')).catch(()=>toast('copy unavailable'))}));
+  document.querySelectorAll('[data-thread-id]').forEach(b=>b.addEventListener('click',()=>{toast('thread loaded')}));
+  const cl=$('clear-chat');if(cl)cl.addEventListener('click',()=>{setChat([]);render()});
+}
+
+async function submitChat(fd){
+  const input=fd.get('input')?.toString().trim();if(!input||chatSending)return;
+  chatSending=true;render();
+  const uid='u'+Date.now(),aid='a'+Date.now();
+  setChat([...chatMessages,{id:uid,role:'user',content:input},{id:aid,role:'assistant',content:'processing…',state:'running'}]);
+  render();
+  try{
+    const r=await api('/api/v1/agents/runs',{method:'POST',body:JSON.stringify({agentId:'concierge',input})});
+    setChat(chatMessages.map(m=>m.id===aid?{...m,content:r.result?.output||'task completed',state:undefined}:m));
+  }catch(e){setChat(chatMessages.map(m=>m.id===aid?{...m,content:e.message,state:'failed'}:m))}
+  finally{chatSending=false;render()}
+}
+
+async function submitStudio(form){
+  const kind=form.dataset.kind,fd=new FormData(form),resultEl=form.querySelector('.studio-result');
+  if(kind==='image'){
+    const prompt=fd.get('prompt')?.toString().trim();if(!prompt)return;
+    const title=fd.get('title')?.toString()||'';
+    if(resultEl)resultEl.innerHTML=`<div class="flex items-center gap-3"><div class="spinner"></div><span class="text-xs text-[#555]">generating via replicate…</span></div>`;
+    try{
+      const r=await api('/api/v1/studios/generate',{method:'POST',body:JSON.stringify({kind:'image',prompt,title})});
+      if(resultEl)resultEl.innerHTML=`<img src="${r.url}" alt="" class="max-w-full max-h-48 rounded-lg mt-2">`;
+      await loadStudioHistory();render();
+    }catch(e){if(resultEl)resultEl.innerHTML=`<div class="text-xs text-[#ff4d6a]">${esc(e.message)}</div>`}
+  }else if(kind==='audio_extract'){
+    const videoPath=fd.get('videoPath')?.toString().trim();if(!videoPath){toast('video path required');return}
+    const format=fd.get('format')?.toString()||'mp3',title=fd.get('title')?.toString()||'Audio extract';
+    try{
+      const r=await api('/api/v1/studios/extract-audio',{method:'POST',body:JSON.stringify({videoPath,format,title})});
+      if(resultEl)resultEl.innerHTML=`<div class="mt-2 font-mono text-[11px] text-[#00f2ff] bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg p-3">${esc(r.command)}</div>`;
+      await loadStudioHistory();render();
+    }catch(e){if(resultEl)resultEl.innerHTML=`<div class="text-xs text-[#ff4d6a]">${esc(e.message)}</div>`}
+  }else{
+    const prompt=fd.get('prompt')?.toString()||'',title=fd.get('title')?.toString()||'';
+    try{await api('/api/v1/studios/history',{method:'POST',body:JSON.stringify({kind,prompt,title,status:kind==='audio'?'needs_setup':'ready'})});form.reset();await loadStudioHistory();toast('brief saved');render()}catch(e){toast(e.message)}
+  }
+}
+
+async function submitArmory(fd){
+  const intent=fd.get('intent')?.toString().trim();if(!intent)return;
+  const model=fd.get('model')?.toString()||'claude-sonnet-4';
+  try{
+    const r=await api('/api/v1/prompt-engine/armory',{method:'POST',body:JSON.stringify({intent,model})});
+    armoryStrategies=r.strategies||[];armoryModelGroup=r.modelGroup||'';armoryModelEntry=r.modelEntry||null;
+    render();
+  }catch(e){toast(e.message)}
+}
+async function submitPlayground(fd){
+  const intent=fd.get('intent')?.toString().trim();if(!intent||pgRunning)return;
+  const provider=fd.get('provider')?.toString()||'openrouter';
+  const model=fd.get('model')?.toString()||'';
+  const strategy=fd.get('strategy')?.toString()||'';
+  pgRunning=true;pgOutput=null;stealthResult=null;render();
+  try{
+    const r=await api('/api/v1/playground/run',{method:'POST',body:JSON.stringify({provider,model,intent,strategy,stealthEval:"true"})});
+    pgOutput=r;
+    await loadProviderHealth();
+  }catch(e){pgOutput={provider,model,response:'',error:e.message,latencyMs:0}}
+  pgRunning=false;render();
+}
+async function submitStealthEval(){
+  const fd=new FormData($('pg-form'));const intent=fd.get('intent')?.toString().trim();if(!intent||pgRunning)return;
+  const model=fd.get('model')?.toString()||'llama-3.1-8b';
+  pgRunning=true;stealthResult=null;render();
+  try{
+    const r=await api('/api/v1/prompt-engine/stealth',{method:'POST',body:JSON.stringify({intent,model})});
+    stealthResult=r;
+  }catch(e){toast(e.message)}
+  pgRunning=false;render();
+}
+async function loadPlaygroundProviders(){try{const r=await api('/api/v1/playground/providers');pgProviders=r.providers||{}}catch{}}
+async function loadProviderHealth(){try{const r=await api('/api/v1/playground/health');providerHealth=r.providers||{}}catch{}}
+async function loadApiKeys(){try{const r=await api('/api/v1/keys/status');apiKeys=r.keys||[]}catch{}}
+async function loadConciergePrompt(){try{const r=await api('/api/v1/concierge/system-prompt');conciergePrompt=r.prompt||''}catch{}}
+async function saveConciergePrompt(){const ta=$('concierge-prompt-text');if(!ta)return;try{await api('/api/v1/concierge/system-prompt',{method:'POST',body:JSON.stringify({prompt:ta.value})});conciergePrompt=ta.value;const m=$('concierge-save-msg');if(m){m.classList.remove('hidden');setTimeout(()=>m.classList.add('hidden'),2000)}}catch{}}
+async function loadMcpData(){try{const[t,n,l,p]=await Promise.all([api('/api/v1/mcp/tools'),api('/api/v1/mcp/nodes'),api('/api/v1/mcp/logs'),api('/api/v1/mcp/approval/pending')]);mcpTools=t.tools||[];mcpNodes=n.nodes||[];mcpLogs=l.logs||[];mcpPending=p.approvals||[]}catch{}}
+async function executeMcpTool(name){try{const r=await api('/api/v1/mcp/tools/'+name+'/execute',{method:'POST',body:JSON.stringify({hitlEnabled:!!mcpHitlEnabled})});if(r.approvalId){mcpPending.push({id:r.approvalId,toolName:name,arguments:{},node:'vps',status:'pending',createdAt:Date.now()})}await loadMcpData();render()}catch{}}
+async function handleMcpApproval(id,action){try{await api('/api/v1/mcp/approval/'+id+'/'+action,{method:'POST'});await loadMcpData();render()}catch{}}
+function updatePlaygroundModels(){
+  const sel=$('pg-provider');if(!sel)return;
+  const prov=sel.value;
+  const provData=pgProviders[prov]||{};
+  const msel=$('pg-model');if(msel)msel.innerHTML=(provData.models||[]).map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join('');
+}
+async function loadPromptData(){try{const[l,t]=await Promise.all([api('/api/v1/prompt-engine/library').catch(()=>[]),api('/api/v1/prompt-engine/threads').catch(()=>[])]);promptLibrary=l.entries||l||[];promptThreads=t.entries||t||[]}catch{}}
+async function loadStudioHistory(){try{const r=await api('/api/v1/studios/history');studioHistory=r.entries||r||[]}catch{}
+async function refresh(){
+  try{snapshot=await api('/api/v1/dashboard');$('connection-dot').classList.add('!bg-[#00f2ff]');$('connection-dot').style.boxShadow='0 0 8px #00f2ff40';$('connection-text').textContent='live';if(active==='chat'||active==='studios'||active==='engine')return;render()}catch{$('connection-dot').classList.remove('!bg-[#00f2ff]');$('connection-dot').style.boxShadow='none';$('connection-text').textContent='offline'}
+}
+
+async function streamEvents(signal){
+  if(signal.aborted)return;
+  try{
+    const r=await fetch('/api/v1/events',{headers:{},signal});if(!r.ok||!r.body)throw Error('stream unavailable');
+    const reader=r.body.getReader(),decoder=new TextDecoder();let buf='',done=false;
+    while(!done){const{value,done:d}=await reader.read();done=d;if(done)continue;
+      buf+=decoder.decode(value,{stream:true}).replaceAll('\r\n','\n');let b=buf.indexOf('\n\n');
+      while(b>=0){const block=buf.slice(0,b);buf=buf.slice(b+2);const data=block.split('\n').filter(l=>l.startsWith('data:')).map(l=>l.slice(5).trim()).join('\n');if(data){events.unshift(`${new Date().toLocaleTimeString()}  ${data}`);events.splice(200);if(active==='logs')render()}b=buf.indexOf('\n\n')}}
+  }catch(e){if(e.name==='AbortError')return;await new Promise(r=>setTimeout(r,2000))}
+  await streamEvents(signal);
+}
+
+renderNav();
+$('nav').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(!b)return;active=b.dataset.view;renderNav();render();if(active==='engine')loadPromptData();if(active==='playground'){loadPlaygroundProviders().then(()=>{loadProviderHealth();render()})};if(active==='apis'){loadApiKeys().then(()=>render())};if(active==='mcp'){loadMcpData().then(()=>render())}});
+$('refresh').addEventListener('click',()=>refresh());
+setInterval(()=>{$('clock').textContent=new Date().toLocaleTimeString()},1000);
+let streamCtrl=new AbortController();streamEvents(streamCtrl.signal);
+refresh();setInterval(refresh,15000);
+loadConciergePrompt();
+</script>
+</body>
+</html>

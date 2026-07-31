@@ -1,7 +1,7 @@
 import type { JsonObject } from "@a1/core";
 
 export type ModelCapability =
-  "coding" | "embedding" | "fast" | "long-context" | "reasoning" | "vision";
+  "coding" | "embedding" | "fast" | "long-context" | "reasoning" | "uncensored" | "vision";
 export type ModelLocation = "cloud" | "local";
 export type MessageRole = "assistant" | "system" | "tool" | "user";
 

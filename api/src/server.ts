@@ -1,4 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 
 import {
   AgentRunner,
@@ -96,6 +98,8 @@ const tokenService =
         secret: createHash("sha256").update(authenticationSecret).digest(),
         ttlSeconds: config.security.authentication.tokenTtlSeconds
       });
+const dashboardPassphrase = process.env.A1_SECRET_DASHBOARD_PASSPHRASE;
+const replicateApiToken = process.env.REPLICATE_API_TOKEN;
 
 type A1EventMap = PluginEventMap & TaskEventMap;
 const events = new InMemoryEventBus<A1EventMap>();
@@ -392,7 +396,19 @@ const agentTaskHandler: TaskHandler<JsonObject> = {
     }
     const definition = agentDefinitions.find((agent) => agent.id === agentId);
     if (definition === undefined) throw new Error(`Agent "${agentId}" is not configured.`);
-    const result = await agentRunner.run(definition, input, context.signal);
+
+    // Check for custom concierge system prompt
+    let systemPrompt = definition.systemPrompt;
+    if (agentId === "concierge") {
+      try {
+        const promptPath = resolve("/opt/a1/data/runtime", "concierge-prompt.json");
+        const data = JSON.parse(await readFile(promptPath, "utf-8")) as { prompt?: string };
+        if (data.prompt && data.prompt.trim().length > 0) systemPrompt = data.prompt;
+      } catch { /* no custom prompt file, use default */ }
+    }
+
+    const effectiveDefinition = { ...definition, systemPrompt };
+    const result = await agentRunner.run(effectiveDefinition, input, context.signal);
     return {
       agentId: result.agentId,
       conversationId: result.conversationId,
@@ -657,6 +673,8 @@ const app = await buildApp({
   health,
   logger,
   ...(tokenService === undefined ? {} : { tokenService }),
+  ...(dashboardPassphrase === undefined ? {} : { dashboardPassphrase }),
+  ...(replicateApiToken === undefined ? {} : { replicateApiToken }),
   workerTokens
 });
 

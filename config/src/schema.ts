@@ -30,7 +30,7 @@ export const a1ConfigSchema = z
                 locationPreference: z.enum(["any", "cloud", "local"]),
                 maxSteps: positiveIntegerSchema,
                 modelCapabilities: z.array(
-                  z.enum(["coding", "embedding", "fast", "long-context", "reasoning", "vision"])
+                  z.enum(["coding", "embedding", "fast", "long-context", "reasoning", "uncensored", "vision"])
                 ),
                 name: z.string().trim().min(1),
                 permissions: z.array(z.string().trim().min(1)),
@@ -129,7 +129,7 @@ export const a1ConfigSchema = z
             z
               .object({
                 capabilities: z.array(
-                  z.enum(["coding", "embedding", "fast", "long-context", "reasoning", "vision"])
+                  z.enum(["coding", "embedding", "fast", "long-context", "reasoning", "uncensored", "vision"])
                 ),
                 contextWindow: positiveIntegerSchema,
                 enabled: booleanSchema,

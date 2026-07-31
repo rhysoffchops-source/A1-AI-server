@@ -341,12 +341,13 @@ export async function buildApp<TEventMap extends object>(
   await app.register(helmet, {
       contentSecurityPolicy: {
         directives: {
-          connectSrc: ["'self'"],
+          connectSrc: ["'self'", "https://a1-vps.tailffab8e.ts.net"],
           defaultSrc: ["'none'"],
           fontSrc: ["'self'", "https://fonts.googleapis.com", "https://fonts.gstatic.com"],
           frameAncestors: ["'none'"],
           imgSrc: ["'self'", "https://replicate.delivery", "data:"],
-          scriptSrc: ["'self'", "https://cdn.tailwindcss.com"],
+          scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com"],
+          scriptSrcAttr: ["'unsafe-inline'"],
           styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"]
         }
       },

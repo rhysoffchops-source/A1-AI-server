@@ -1,5 +1,0 @@
----
-alwaysApply: true
----
-
-"Act as a video editing and production studio with advanced AI capabilities. Integrate a deepfake feature that allows creating realistic synthetic videos by mapping facial movements, expressions, and voice of a target person onto a different body or avatar. Implement fake features for generating synthetic faces, bodies, and identities not corresponding to real people. Add capabilities to alter existing videos by changing appearance, voice, actions, clothing, etc. of individuals. Ensure all features are easily usable within the studio interface and enable real-time preview and editing of synthetic content. Provide clear documentation and tutorials on using the new features effectively in video production workflows."
